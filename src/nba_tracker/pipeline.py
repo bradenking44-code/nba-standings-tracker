@@ -183,8 +183,9 @@ def run_pipeline(now: datetime | None = None) -> dict[str, object]:
     raw_path.unlink(missing_ok=True)
 
     source_result: dict[str, object]
+    season = current_season(date.fromisoformat(run_date))
     try:
-        raw = fetch_raw()
+        raw = fetch_raw(season=season)
         rows = parse_standings(raw)
         _save_raw(raw_path, raw)
         source_result = {
@@ -208,7 +209,7 @@ def run_pipeline(now: datetime | None = None) -> dict[str, object]:
     snapshots = load_snapshots(RAW_DIR)
     history_count = write_history(HISTORY_PATH, snapshots)
     status = build_status(snapshots, now, [source_result], run_date)
-    status["season"] = current_season(date.fromisoformat(run_date))
+    status["season"] = season
     write_status(STATUS_PATH, status)
     issue_body = make_issue_body(run_date, source_result, snapshots)
     ISSUE_PATH.write_text(issue_body, encoding="utf-8")

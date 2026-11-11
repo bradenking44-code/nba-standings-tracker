@@ -4,7 +4,7 @@ const NUMERIC_FIELDS = new Set([
 ]);
 const CHART_COLORS = ["#ff885d", "#77b8ff", "#5bd3ad", "#ffc36a", "#c397ff", "#ff777d"];
 const STORAGE_KEY = "nba-standings-shortlist-v1";
-const appState = { history: [], status: {}, latest: [], previous: [], latestDate: "", previousDate: "", stars: new Set(), sortKey: "rank", sortDir: 1, shortlistOnly: false };
+const appState = { history: [], status: {}, latest: [], previous: [], latestDate: "", previousDate: "", stars: new Set(), sortKey: "rank", sortDir: 1, shortlistOnly: false, redrawHistory: null };
 
 function parseCSV(text) {
   const rows = [];
@@ -92,9 +92,9 @@ function setText(id, value) {
 }
 
 function runLabel() {
-  if (!appState.status.run_time) return "No successful data yet";
+  if (!appState.status.run_time) return "No run recorded yet";
   const parsed = new Date(appState.status.run_time);
-  return Number.isNaN(parsed.getTime()) ? appState.status.run_time : `Collected ${parsed.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} UTC`;
+  return Number.isNaN(parsed.getTime()) ? appState.status.run_time : `Last run ${parsed.toLocaleString("en-US", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })} UTC`;
 }
 
 function findPreviousMap() { return new Map(appState.previous.map(row => [String(row.item_id), row])); }
@@ -159,9 +159,15 @@ function renderToday() {
 
   const moverList = document.getElementById("movers-list");
   if (moverList) {
-    const movers = deltas().filter(entry => entry.old).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta) || String(a.row.item_id).localeCompare(String(b.row.item_id))).slice(0, 5);
+    const movers = deltas().filter(entry => entry.old && entry.delta !== 0).sort((a, b) => {
+      const magnitude = Math.abs(b.delta) - Math.abs(a.delta);
+      if (magnitude) return magnitude;
+      const aDiff = Math.abs(Number(a.row.point_diff_pg) - Number(a.old.point_diff_pg));
+      const bDiff = Math.abs(Number(b.row.point_diff_pg) - Number(b.old.point_diff_pg));
+      return bDiff - aDiff || String(a.row.item_id).localeCompare(String(b.row.item_id));
+    }).slice(0, 5);
     if (!appState.previousDate) moverList.innerHTML = '<p class="muted">The first run sets the baseline. Daily movement appears after the next successful snapshot.</p>';
-    else if (!movers.length || movers.every(entry => entry.delta === 0)) moverList.innerHTML = '<p class="muted">No win-percentage moves since the last successful snapshot.</p>';
+    else if (!movers.length) moverList.innerHTML = '<p class="muted">No win-percentage moves since the last successful snapshot.</p>';
     else moverList.innerHTML = movers.map((entry, index) => `<div class="mover-row"><span class="mover-rank">0${index + 1}</span><span><span class="mover-name">${escapeHTML(entry.row.item)}</span><span class="mover-note">${entry.old.record} → ${entry.row.record}</span></span><span class="mover-value ${tone(entry.delta)}">${signed(entry.delta, 2)} pp</span></div>`).join("");
   }
 }
@@ -331,8 +337,19 @@ function renderFindings() {
   }).filter(Boolean).sort((a, b) => b.value - a.value);
   if (changes.length) {
     const best = changes[0], low = changes.at(-1);
-    setText("finding-1-copy", `${best.item} has gained ${signed(best.value, 2)} percentage points in win percentage since ${snapshots[0][0]}. Change is latest win% minus each team’s first recorded win%. ${low.value < 0 ? `${low.item} is down ${Math.abs(low.value).toFixed(2)} points.` : "No tracked team has a net decline from its opening snapshot."}`);
+    const bestText = best.value > 0
+      ? `${best.item} has gained ${signed(best.value, 2)} percentage points in win percentage since ${snapshots[0][0]}.`
+      : best.value < 0
+        ? `${best.item} has the smallest decline at ${signed(best.value, 2)} percentage points since ${snapshots[0][0]}; no team has a net gain.`
+        : low.value < 0
+          ? `${best.item} is unchanged since the opening snapshot on ${snapshots[0][0]}; no team has a net gain.`
+          : `No team has changed its win percentage since the opening snapshot on ${snapshots[0][0]}.`;
+    const lowText = low.value < 0 ? `${low.item} is down ${Math.abs(low.value).toFixed(2)} points.` : "No tracked team has a net decline from its opening snapshot.";
+    setText("finding-1-copy", `${bestText} Change is latest win% minus each team’s first recorded win%. ${lowText}`);
     drawBars(document.getElementById("finding-1-chart"), changes.slice(0, 5));
+  } else {
+    setText("finding-1-copy", "A season comparison will appear after the first successful snapshot.");
+    drawBars(document.getElementById("finding-1-chart"), []);
   }
 
   const daily = [];
@@ -351,6 +368,9 @@ function renderFindings() {
     const top = daily[0];
     setText("finding-2-copy", `${top.item} moved ${signed(top.value, 2)} percentage points from ${top.priorDate} to ${top.date}, the largest single-step change in the archive. Each adjacent successful snapshot is compared team by team.`);
     drawBars(document.getElementById("finding-2-chart"), daily.slice(0, 5).map(item => ({ label: `${item.item} · ${item.date.slice(5)}`, value: item.value })));
+  } else {
+    setText("finding-2-copy", "A day-to-day comparison will appear after two successful snapshots.");
+    drawBars(document.getElementById("finding-2-chart"), []);
   }
 
   const bestDiff = [...appState.latest].sort((a, b) => Number(b.point_diff_pg) - Number(a.point_diff_pg));
@@ -358,6 +378,9 @@ function renderFindings() {
     const leader = bestDiff[0];
     setText("finding-3-copy", `${leader.item} leads the current field at ${signed(leader.point_diff_pg)} points per game. Point differential is points scored per game minus opponent points per game in the latest snapshot.`);
     drawBars(document.getElementById("finding-3-chart"), bestDiff.slice(0, 5).map(row => ({ label: row.item, value: row.point_diff_pg })), "");
+  } else {
+    setText("finding-3-copy", "Point differential leaders will appear after the first successful snapshot.");
+    drawBars(document.getElementById("finding-3-chart"), []);
   }
 
   const conferenceValues = [...new Set(appState.latest.map(row => row.conference))].sort().map(conference => {
@@ -369,6 +392,9 @@ function renderFindings() {
   if (conferenceValues.length) {
     setText("finding-4-copy", conferenceValues.map(item => `${item.label}: ${item.value.toFixed(2)} percentage points from ${item.leader} (1st) to ${item.tenth} (10th). The gap uses conference rank and the current win percentages.`).join(" "));
     drawBars(document.getElementById("finding-4-chart"), conferenceValues);
+  } else {
+    setText("finding-4-copy", "The conference race comparison will appear after the first successful snapshot.");
+    drawBars(document.getElementById("finding-4-chart"), []);
   }
 }
 
@@ -411,6 +437,7 @@ function renderTrends() {
   }
   metricSelect?.addEventListener("change", drawHistory);
   teamSelect.addEventListener("change", drawHistory);
+  appState.redrawHistory = drawHistory;
   drawHistory();
   renderFindings();
 }
@@ -440,6 +467,6 @@ async function init() {
 
 init();
 window.addEventListener("resize", () => {
-  if (document.body.dataset.page === "trends") renderTrends();
+  if (document.body.dataset.page === "trends") appState.redrawHistory?.();
 });
 
