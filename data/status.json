@@ -1,12 +1,18 @@
 {
-  "days_with_success": 0,
-  "first_run_date": "",
+  "days_with_success": 1,
+  "first_run_date": "2026-11-11",
   "gone_today": 0,
-  "items": 0,
-  "latest_snapshot_date": "",
+  "items": 30,
+  "latest_snapshot_date": "2026-11-11",
   "new_today": 0,
-  "run_time": "",
-  "season": "",
-  "sources": []
+  "run_time": "2026-11-11T22:25:51Z",
+  "season": "2026-27",
+  "sources": [
+    {
+      "count": 30,
+      "error": "",
+      "name": "ESPN",
+      "ok": true
+    }
+  ]
 }
-
