@@ -1,0 +1,2 @@
+"""Daily NBA standings tracker."""
+
