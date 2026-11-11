@@ -1,4 +1,4 @@
-"""NBA Stats standings source adapter."""
+"""ESPN NBA standings source adapter."""
 
 from __future__ import annotations
 
@@ -7,9 +7,22 @@ from datetime import date
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-SOURCE_ID = "nba_stats"
-SOURCE_NAME = "NBA Stats"
-BASE_URL = "https://stats.nba.com/stats/leaguestandingsv3"
+SOURCE_ID = "espn"
+SOURCE_NAME = "ESPN"
+BASE_URL = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
+
+# ESPN's conference standings response does not include division names. The
+# NBA's current team-to-division assignments fill that presentation field.
+TEAM_DIVISIONS = {
+    "ATL": "Southeast", "BOS": "Atlantic", "BKN": "Atlantic", "CHA": "Southeast",
+    "CHI": "Central", "CLE": "Central", "DAL": "Southwest", "DEN": "Northwest",
+    "DET": "Central", "GSW": "Pacific", "HOU": "Southwest", "IND": "Central",
+    "LAC": "Pacific", "LAL": "Pacific", "MEM": "Southwest", "MIA": "Southeast",
+    "MIL": "Central", "MIN": "Northwest", "NOP": "Southwest", "NYK": "Atlantic",
+    "OKC": "Northwest", "ORL": "Southeast", "PHI": "Atlantic", "PHX": "Pacific",
+    "POR": "Northwest", "SAC": "Pacific", "SAS": "Southwest", "TOR": "Atlantic",
+    "UTA": "Northwest", "WAS": "Southeast",
+}
 
 
 def current_season(today: date | None = None) -> str:
@@ -20,12 +33,13 @@ def current_season(today: date | None = None) -> str:
 
 
 def request_url(season: str | None = None) -> str:
-    params = {
-        "LeagueID": "00",
-        "Season": season or current_season(),
-        "SeasonType": "Regular Season",
-        "Section": "overall",
-    }
+    """Build an ESPN request for the selected season's regular-season table."""
+    season_label = season or current_season()
+    try:
+        end_year = int(season_label.split("-", maxsplit=1)[0]) + 1
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid NBA season label: {season_label!r}") from exc
+    params = {"season": str(end_year), "seasontype": "2"}
     return f"{BASE_URL}?{urlencode(params)}"
 
 
@@ -34,17 +48,8 @@ def fetch_raw(season: str | None = None, timeout: int = 30) -> bytes:
     request = Request(
         request_url(season),
         headers={
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Origin": "https://www.nba.com",
-            "Referer": "https://www.nba.com/",
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/131.0.0.0 Safari/537.36"
-            ),
-            "x-nba-stats-origin": "stats",
-            "x-nba-stats-token": "true",
+            "Accept": "application/json",
+            "User-Agent": "nba-standings-tracker/0.1",
         },
     )
     with urlopen(request, timeout=timeout) as response:
@@ -57,91 +62,116 @@ def fetch_raw(season: str | None = None, timeout: int = 30) -> bytes:
 
 def _as_float(value: object, field: str) -> float:
     if value is None or value == "":
-        raise ValueError(f"NBA standings field {field!r} is empty")
+        raise ValueError(f"ESPN standings field {field!r} is empty")
     return float(value)
 
 
 def _as_int(value: object, field: str) -> int:
     if value is None or value == "":
-        raise ValueError(f"NBA standings field {field!r} is empty")
+        raise ValueError(f"ESPN standings field {field!r} is empty")
     return int(float(value))
 
 
-def _result_sets(payload: dict) -> list[dict]:
-    result_sets = payload.get("resultSets") or payload.get("resultSet")
-    if isinstance(result_sets, dict):
-        result_sets = [result_sets]
-    if not isinstance(result_sets, list):
-        raise ValueError("NBA response does not contain resultSets")
-    return [item for item in result_sets if isinstance(item, dict)]
+def _stat_value(stats: dict[str, dict], name: str) -> object:
+    stat = stats.get(name)
+    if not stat:
+        raise ValueError(f"ESPN standings response is missing {name!r}")
+    return stat.get("value")
 
 
-def _standings_table(payload: dict) -> tuple[list[str], list[list[object]]]:
-    for result_set in _result_sets(payload):
-        headers = result_set.get("headers")
-        rows = result_set.get("rowSet")
-        if isinstance(headers, list) and isinstance(rows, list):
-            normalized = {str(name).casefold() for name in headers}
-            if {"teamid", "wins", "losses", "winpct"}.issubset(normalized):
-                return [str(name) for name in headers], rows
-    raise ValueError("NBA response has no recognizable standings table")
+def _stat_summary(stats: dict[str, dict], name: str) -> str:
+    stat = stats.get(name, {})
+    return str(stat.get("summary") or stat.get("displayValue") or "")
 
 
 def parse_standings(raw: bytes | str) -> list[dict[str, object]]:
-    """Convert a raw NBA Stats JSON response into common team rows."""
+    """Convert ESPN's conference standings response into common team rows."""
     try:
         payload = json.loads(raw)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise ValueError(f"NBA response is not valid JSON: {exc}") from exc
+        raise ValueError(f"ESPN response is not valid JSON: {exc}") from exc
     if not isinstance(payload, dict):
-        raise ValueError("NBA response root must be an object")
+        raise ValueError("ESPN response root must be an object")
 
-    headers, raw_rows = _standings_table(payload)
+    conferences = payload.get("children")
+    if not isinstance(conferences, list):
+        raise ValueError("ESPN response does not contain conference standings")
+
     rows: list[dict[str, object]] = []
-    for raw_row in raw_rows:
-        if not isinstance(raw_row, list) or len(raw_row) != len(headers):
-            raise ValueError("NBA standings row does not match its headers")
-        source_row = {header.casefold(): value for header, value in zip(headers, raw_row)}
-        team_id = str(source_row.get("teamid", "")).strip()
-        if not team_id:
-            raise ValueError("NBA standings row is missing TeamID")
-        city = str(source_row.get("teamcity", "") or "").strip()
-        name = str(source_row.get("teamname", "") or "").strip()
-        team_name = " ".join(part for part in (city, name) if part)
-        if not team_name:
-            team_name = str(source_row.get("teamslug", team_id)).strip()
+    for conference_group in conferences:
+        if not isinstance(conference_group, dict):
+            continue
+        standings = conference_group.get("standings")
+        if not isinstance(standings, dict):
+            continue
+        entries = standings.get("entries")
+        if not isinstance(entries, list):
+            continue
+        conference = str(
+            conference_group.get("abbreviation") or conference_group.get("name") or ""
+        ).strip()
 
-        rows.append(
-            {
-                "item_id": team_id,
-                "item": team_name,
-                "source": SOURCE_ID,
-                "conference": str(source_row.get("conference", "") or ""),
-                "division": str(source_row.get("division", "") or ""),
-                "rank": _as_int(source_row.get("playoffrank"), "PlayoffRank"),
-                "wins": _as_int(source_row.get("wins"), "WINS"),
-                "losses": _as_int(source_row.get("losses"), "LOSSES"),
-                "win_pct": round(_as_float(source_row.get("winpct"), "WinPCT"), 3),
-                "points_for_pg": round(_as_float(source_row.get("points_pg"), "Points_PG"), 1),
-                "points_against_pg": round(
-                    _as_float(source_row.get("opppoints_pg"), "OppPoints_PG"), 1
-                ),
-                "point_diff_pg": round(
-                    _as_float(source_row.get("diffpoints_pg"), "DiffPoints_PG"), 1
-                ),
-                "games_back": round(
-                    _as_float(source_row.get("conferencegamesback"), "ConferenceGamesBack"), 1
-                ),
-                "streak": str(source_row.get("currentstreak", "") or ""),
-                "record": str(source_row.get("record", "") or ""),
-                "home_record": str(source_row.get("home", "") or ""),
-                "road_record": str(source_row.get("road", "") or ""),
-                "last10": str(source_row.get("l10", "") or ""),
+        for rank, entry in enumerate(entries, start=1):
+            if not isinstance(entry, dict):
+                raise ValueError("ESPN standings entry is not an object")
+            team = entry.get("team")
+            if not isinstance(team, dict):
+                raise ValueError("ESPN standings entry is missing its team")
+            team_id = str(team.get("id", "")).strip()
+            if not team_id:
+                raise ValueError("ESPN standings team is missing its ID")
+
+            raw_stats = entry.get("stats")
+            if not isinstance(raw_stats, list):
+                raise ValueError(f"ESPN standings entry {team_id} has no stats list")
+            stats = {
+                str(stat.get("name")): stat
+                for stat in raw_stats
+                if isinstance(stat, dict) and stat.get("name")
             }
-        )
-    if len(rows) < 10:
-        raise ValueError(f"NBA response returned only {len(rows)} teams; expected at least 10")
-    if len({row["item_id"] for row in rows}) != len(rows):
-        raise ValueError("NBA response contains duplicate TeamID values")
-    return sorted(rows, key=lambda row: str(row["item_id"]))
 
+            wins = _as_int(_stat_value(stats, "wins"), "wins")
+            losses = _as_int(_stat_value(stats, "losses"), "losses")
+            abbreviation = str(team.get("abbreviation", "")).strip().upper()
+            item = str(team.get("displayName") or " ".join(
+                part for part in (team.get("location"), team.get("name")) if part
+            )).strip()
+            if not item:
+                item = team_id
+
+            rows.append(
+                {
+                    "item_id": team_id,
+                    "item": item,
+                    "source": SOURCE_ID,
+                    "conference": conference,
+                    "division": TEAM_DIVISIONS.get(abbreviation, ""),
+                    "rank": rank,
+                    "wins": wins,
+                    "losses": losses,
+                    "win_pct": round(_as_float(_stat_value(stats, "winPercent"), "winPercent"), 3),
+                    "points_for_pg": round(
+                        _as_float(_stat_value(stats, "avgPointsFor"), "avgPointsFor"), 1
+                    ),
+                    "points_against_pg": round(
+                        _as_float(_stat_value(stats, "avgPointsAgainst"), "avgPointsAgainst"), 1
+                    ),
+                    "point_diff_pg": round(
+                        _as_float(_stat_value(stats, "differential"), "differential"), 1
+                    ),
+                    "games_back": round(
+                        _as_float(_stat_value(stats, "gamesBehind"), "gamesBehind"), 1
+                    ),
+                    "streak": _stat_summary(stats, "streak"),
+                    "record": _stat_summary(stats, "overall") or f"{wins}-{losses}",
+                    "home_record": _stat_summary(stats, "Home"),
+                    "road_record": _stat_summary(stats, "Road"),
+                    "last10": _stat_summary(stats, "Last Ten Games"),
+                }
+            )
+
+    if len(rows) < 10:
+        raise ValueError(f"ESPN response returned only {len(rows)} teams; expected at least 10")
+    if len({row["item_id"] for row in rows}) != len(rows):
+        raise ValueError("ESPN response contains duplicate team IDs")
+    return sorted(rows, key=lambda row: str(row["item_id"]))

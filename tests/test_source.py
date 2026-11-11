@@ -14,9 +14,8 @@ def test_current_season_uses_october_as_season_boundary():
 
 def test_request_url_selects_regular_season_overall():
     url = request_url("2026-27")
-    assert "Season=2026-27" in url
-    assert "SeasonType=Regular+Season" in url
-    assert "Section=overall" in url
+    assert "season=2027" in url
+    assert "seasontype=2" in url
 
 
 def test_parse_standings_maps_source_fields_to_common_columns(payload_factory):
@@ -27,7 +26,7 @@ def test_parse_standings_maps_source_fields_to_common_columns(payload_factory):
     first = rows[0]
     assert first["item_id"] == "1610612700"
     assert first["item"] == "City Team 1"
-    assert first["source"] == "nba_stats"
+    assert first["source"] == "espn"
     assert first["conference"] == "East"
     assert first["division"] == "Atlantic"
     assert first["rank"] == 1
@@ -51,7 +50,8 @@ def test_parser_fails_closed_for_invalid_or_too_small_responses(payload_factory)
 
 def test_parser_rejects_duplicate_team_ids(payload_factory):
     payload = payload_factory()
-    payload["resultSets"][0]["rowSet"][1][0] = payload["resultSets"][0]["rowSet"][0][0]
-    with pytest.raises(ValueError, match="duplicate TeamID"):
+    east_entries = payload["children"][0]["standings"]["entries"]
+    east_entries[1]["team"]["id"] = east_entries[0]["team"]["id"]
+    with pytest.raises(ValueError, match="duplicate team IDs"):
         parse_standings(json.dumps(payload))
 

@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from .source import parse_standings
+from .source import SOURCE_ID, parse_standings
 
 HISTORY_FIELDS = [
     "date",
@@ -38,7 +38,7 @@ def load_snapshots(raw_dir: Path) -> dict[str, list[dict[str, object]]]:
     snapshots: dict[str, list[dict[str, object]]] = {}
     if not raw_dir.exists():
         return snapshots
-    for path in sorted(raw_dir.glob("*/nba_stats.json.gz")):
+    for path in sorted(raw_dir.glob(f"*/{SOURCE_ID}.json.gz")):
         run_date = path.parent.name
         with gzip.open(path, "rb") as stream:
             rows = parse_standings(stream.read())
@@ -73,7 +73,7 @@ def build_status(
     run_date: str,
 ) -> dict[str, object]:
     successful_dates = sorted(snapshots)
-    current_result = next((row for row in source_results if row.get("id") == "nba_stats"), {})
+    current_result = next((row for row in source_results if row.get("id") == SOURCE_ID), {})
     current_ok = bool(current_result.get("ok"))
     current_rows = snapshots.get(run_date, []) if current_ok else []
 

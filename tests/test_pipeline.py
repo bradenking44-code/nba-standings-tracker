@@ -6,14 +6,20 @@ import json
 def test_move_rule_reports_win_percentage_point_change_and_roster_changes(payload_factory):
     old_payload = payload_factory()
     new_payload = payload_factory()
-    old_rows = old_payload["resultSets"][0]["rowSet"]
-    new_rows = new_payload["resultSets"][0]["rowSet"]
-    old_rows[0][12] = 0.600
-    new_rows[0][12] = 0.700
-    new_rows[0][10] = 21
-    new_rows[0][13] = "21-9"
+    old_entries = old_payload["children"][0]["standings"]["entries"]
+    new_entries = new_payload["children"][0]["standings"]["entries"]
+    for stat in old_entries[0]["stats"]:
+        if stat["name"] == "winPercent":
+            stat["value"] = 0.600
+    for stat in new_entries[0]["stats"]:
+        if stat["name"] == "winPercent":
+            stat["value"] = 0.700
+        elif stat["name"] == "wins":
+            stat["value"] = 21
+        elif stat["name"] == "overall":
+            stat["summary"] = "21-9"
     # One team appears, and the final team disappears.
-    new_rows[-1][0] = 999999
+    new_payload["children"][1]["standings"]["entries"][-1]["team"]["id"] = "999999"
 
     snapshots = {
         "2026-11-10": parse_standings(json.dumps(old_payload)),

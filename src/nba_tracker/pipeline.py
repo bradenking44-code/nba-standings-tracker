@@ -15,7 +15,22 @@ from urllib.request import Request, urlopen
 from .history import build_status, load_snapshots, write_history, write_status
 from .source import SOURCE_ID, SOURCE_NAME, current_season, fetch_raw, parse_standings
 
-ROOT = Path(__file__).resolve().parents[2]
+def _project_root() -> Path:
+    """Find the checked-out project, including when this package is installed."""
+    configured_root = os.environ.get("NBA_TRACKER_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.append(Path.cwd())
+    candidates.extend(Path(__file__).resolve().parents)
+    for candidate in candidates:
+        root = candidate.resolve()
+        if (root / "pyproject.toml").is_file() and (root / "data").is_dir():
+            return root
+    raise RuntimeError(
+        "Could not find the NBA tracker project root; run from the repository or set NBA_TRACKER_ROOT."
+    )
+
+
+ROOT = _project_root()
 RAW_DIR = ROOT / "data" / "raw"
 HISTORY_PATH = ROOT / "data" / "history.csv"
 STATUS_PATH = ROOT / "data" / "status.json"

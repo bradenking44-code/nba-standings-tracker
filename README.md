@@ -6,15 +6,15 @@ A daily tracker for NBA regular-season standings. A scheduled GitHub Actions wor
 
 ## Data source
 
-The collector requests the NBA Stats standings endpoint:
+The collector requests ESPN's NBA standings endpoint:
 
 ```text
-https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=<season>&SeasonType=Regular+Season&Section=overall
+https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=<ending-year>&seasontype=2
 ```
 
-It fetches the JSON without an account or API key and sends the browser headers used by the NBA Stats site. The response is compressed unchanged into `data/raw/<UTC date>/nba_stats.json.gz`. The [NBA standings page](https://www.nba.com/standings) is the human-readable reference for the regular-season standings. The endpoint is public-facing but does not provide a versioned API contract; the parser checks the response shape and marks a changed or blocked response as a source failure rather than writing invalid history.
+It fetches regular-season JSON without an account or API key. The response is compressed unchanged into `data/raw/<UTC date>/espn.json.gz`. The [NBA standings page](https://www.nba.com/standings) is a human-readable league reference. ESPN's endpoint is public-facing but does not provide a versioned API contract; the parser checks the response shape and marks a changed or blocked response as a source failure rather than writing invalid history. Division names are mapped from ESPN team abbreviations because the standings response groups teams by conference only.
 
-The tracker keeps all 30 team rows returned by the source. The stable `TeamID` is the key that joins the same team between days. The project records daily snapshots, so values remain the same on dates when no NBA games have been completed.
+The tracker keeps all 30 team rows returned by the source. The stable ESPN team ID is the key that joins the same team between days. The project records daily snapshots, so values remain the same on dates when no NBA games have been completed.
 
 ## History columns
 
@@ -23,12 +23,12 @@ The tracker keeps all 30 team rows returned by the source. The stable `TeamID` i
 | Column | Meaning | Unit or format |
 | --- | --- | --- |
 | `date` | UTC snapshot date | `YYYY-MM-DD` |
-| `item_id` | NBA Stats team identifier (`TeamID`) | Stable string key |
+| `item_id` | ESPN team identifier | Stable string key |
 | `item` | City and team name | Text |
-| `source` | Source identifier | `nba_stats` |
+| `source` | Source identifier | `espn` |
 | `conference` | Eastern or Western conference | Text (`East` / `West`) |
 | `division` | NBA division | Text |
-| `rank` | Team's rank in its conference (`PlayoffRank`) | Integer |
+| `rank` | Team's position in ESPN's conference standings order | Integer |
 | `wins` | Regular-season wins | Games |
 | `losses` | Regular-season losses | Games |
 | `win_pct` | Winning percentage | Decimal from 0 to 1 |
@@ -107,7 +107,7 @@ The assignment requires successful pipeline runs on at least seven different dat
 | `.github/workflows/pages.yml` | Builds and deploys the GitHub Pages artifact. |
 | `.github/workflows/tests.yml` | Runs the pytest suite on pushes and pull requests. |
 | `src/nba_tracker/__init__.py` | Python package marker. |
-| `src/nba_tracker/source.py` | NBA Stats request, season selection, response parsing, and common-row conversion. |
+| `src/nba_tracker/source.py` | ESPN request, season selection, response parsing, and common-row conversion. |
 | `src/nba_tracker/history.py` | Raw snapshot loading, deterministic CSV history, and status JSON builder. |
 | `src/nba_tracker/pipeline.py` | Daily collection, compressed raw storage, issue report, and GitHub Issue updates. |
 | `scripts/build_site.py` | Copies site assets and current data into the Pages build directory. |
@@ -119,7 +119,7 @@ The assignment requires successful pipeline runs on at least seven different dat
 | `data/status.json` | Latest run status, source result, date counts, and team counts. |
 | `data/daily_issue.md` | Generated body for the dated GitHub Issue. |
 | `data/raw/.gitkeep` | Keeps the raw archive directory in Git before the first successful run. |
-| `data/raw/<date>/nba_stats.json.gz` | Compressed, unmodified NBA Stats JSON response for a successful UTC date. |
+| `data/raw/<date>/espn.json.gz` | Compressed, unmodified ESPN JSON response for a successful UTC date. |
 | `site/index.html` | Today page with the current field, daily movement, and run status. |
 | `site/browse.html` | Searchable and sortable team table with filters and saved stars. |
 | `site/trends.html` | Daily metric chart and four history-based findings. |
