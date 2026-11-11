@@ -78,9 +78,9 @@ Then open `http://localhost:8000`. GitHub Pages is published by `.github/workflo
 
 The site provides:
 
-- **Today**: latest standings, each team's change since the previous snapshot, the five biggest moves, source status, and run counts.
+- **Today**: latest standings ranked league-wide from best to worst, each team's change since the previous snapshot, the five biggest moves, source status, and run counts.
 - **Browse**: search by team name, filters for conference and division, sort controls for every numeric standings column, and a shortlist saved in browser storage.
-- **Trends**: a metric selector and team selector for the daily history chart, plus four findings computed in the browser from `history.csv`.
+- **Trends**: a metric selector and searchable team checkbox filters for the daily history chart, plus four findings computed in the browser from `history.csv`.
 - A web-app manifest and service worker. Once loaded online, pages and the latest data remain available offline.
 
 ## Setup and checks

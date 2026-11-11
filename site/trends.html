@@ -27,15 +27,19 @@
       <div class="chart-controls">
         <label>MEASURE<select id="metric-select">
           <option value="win_pct">Winning percentage</option><option value="wins">Wins</option><option value="losses">Losses</option>
-          <option value="rank">Conference rank</option><option value="points_for_pg">Points per game</option>
+          <option value="rank">League rank</option><option value="points_for_pg">Points per game</option>
           <option value="points_against_pg">Opponent points per game</option><option value="point_diff_pg">Point differential per game</option>
           <option value="games_back">Games back</option>
         </select></label>
-        <label>TEAMS<select id="team-select" multiple size="1" aria-label="Choose teams to show"><option value="">All teams (select up to six)</option></select></label>
+        <section class="team-filter" aria-label="Filter chart by team">
+          <div class="team-filter-heading"><span>FILTER TEAMS</span><span id="team-filter-count">Loading teams</span></div>
+          <div class="team-filter-tools"><input id="team-search" type="search" placeholder="Find a team…" aria-label="Search teams"><button id="clear-team-filter" class="button button-quiet" type="button">Clear teams</button></div>
+          <div id="team-filter-list" class="team-filter-list" role="group" aria-label="Teams to include in the graph"></div>
+        </section>
       </div>
       <div class="chart-wrap chart-large"><canvas id="history-chart" aria-label="Selected NBA metric across daily snapshots" role="img"></canvas></div>
       <div id="history-legend" class="chart-legend"></div>
-      <p class="chart-footnote">Data points are daily snapshots. Team rank is within its conference; all other values are reported by the source.</p>
+      <p id="chart-status" class="chart-footnote">Data points are daily snapshots. Select teams above to filter the graph.</p>
     </section>
     <section class="findings-grid">
       <article class="panel finding-card"><p class="eyebrow">01 · SEASON ARC</p><h2 id="finding-1-title">Change since opening snapshot</h2><p id="finding-1-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-1-chart" aria-label="Change in win percentage since first tracked snapshot" role="img"></canvas></div></article>

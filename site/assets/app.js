@@ -48,12 +48,15 @@ function groupByDate(rows) {
   return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-function byStandings(a, b) {
-  return Number(a.rank) - Number(b.rank)
-    || Number(b.win_pct) - Number(a.win_pct)
+function byRecord(a, b) {
+  return Number(b.win_pct) - Number(a.win_pct)
     || Number(b.wins) - Number(a.wins)
     || Number(b.point_diff_pg) - Number(a.point_diff_pg)
     || String(a.item_id).localeCompare(String(b.item_id));
+}
+
+function rankedTeams(rows) {
+  return [...rows].sort(byRecord).map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
 function teamInitials(name) {
@@ -111,7 +114,7 @@ function deltas() {
 }
 
 function renderToday() {
-  const sorted = [...appState.latest].sort((a, b) => Number(b.win_pct) - Number(a.win_pct) || byStandings(a, b));
+  const sorted = rankedTeams(appState.latest);
   const leader = sorted[0];
   const bestDiff = [...appState.latest].sort((a, b) => Number(b.point_diff_pg) - Number(a.point_diff_pg))[0];
   setText("snapshot-date", appState.latestDate || "Awaiting first run");
@@ -145,12 +148,12 @@ function renderToday() {
   const tableBody = document.querySelector("#today-table tbody");
   if (tableBody) {
     if (!sorted.length) tableBody.innerHTML = '<tr><td colspan="7" class="loading-cell">No successful standings snapshot yet.</td></tr>';
-    else tableBody.innerHTML = [...appState.latest].sort(byStandings).map(row => {
+    else tableBody.innerHTML = sorted.map(row => {
       const old = previous.get(String(row.item_id));
       const change = old ? (Number(row.win_pct) - Number(old.win_pct)) * 100 : null;
       const changeLabel = change === null ? (appState.previousDate ? "NEW" : "BASELINE") : `${signed(change, 2)} pp`;
       return `<tr>
-        <td>${escapeHTML(row.rank)}</td>
+        <td><span class="rank-number">${escapeHTML(row.rank)}</span></td>
         <td><span class="team-cell">${teamBadge(row)}${escapeHTML(row.item)}</span></td>
         <td>${escapeHTML(row.record)}</td><td>${pct(row.win_pct)}</td>
         <td>${Number(row.points_for_pg).toFixed(1)}</td>
@@ -187,6 +190,7 @@ function saveStars() {
 
 function renderBrowse() {
   loadStars();
+  const rankedLatest = rankedTeams(appState.latest);
   const conferenceFilter = document.getElementById("conference-filter");
   const divisionFilter = document.getElementById("division-filter");
   const search = document.getElementById("team-search");
@@ -196,12 +200,12 @@ function renderBrowse() {
   if (!body) return;
 
   for (const [select, field] of [[conferenceFilter, "conference"], [divisionFilter, "division"]]) {
-    const values = [...new Set(appState.latest.map(row => row[field]).filter(Boolean))].sort();
+    const values = [...new Set(rankedLatest.map(row => row[field]).filter(Boolean))].sort();
     values.forEach(value => select?.insertAdjacentHTML("beforeend", `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`));
   }
   function render() {
     const query = search?.value.trim().toLocaleLowerCase() ?? "";
-    let visible = appState.latest.filter(row => {
+    let visible = rankedLatest.filter(row => {
       return (!conferenceFilter?.value || row.conference === conferenceFilter.value)
         && (!divisionFilter?.value || row.division === divisionFilter.value)
         && (!query || String(row.item).toLocaleLowerCase().includes(query))
@@ -214,10 +218,10 @@ function renderBrowse() {
       else cmp = String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? ""));
       return appState.sortDir * cmp || String(a.item_id).localeCompare(String(b.item_id));
     });
-    if (count) count.textContent = `${visible.length} of ${appState.latest.length} teams`;
+    if (count) count.textContent = `${visible.length} of ${rankedLatest.length} teams`;
     if (!visible.length) { body.innerHTML = '<tr><td colspan="12" class="loading-cell">No teams match these filters.</td></tr>'; return; }
     body.innerHTML = visible.map(row => `<tr>
-      <td>${escapeHTML(row.rank)}</td><td><span class="team-cell">${teamBadge(row)}${escapeHTML(row.item)}</span></td>
+      <td><span class="rank-number">${escapeHTML(row.rank)}</span></td><td><span class="team-cell">${teamBadge(row)}${escapeHTML(row.item)}</span></td>
       <td>${escapeHTML(row.conference)}</td><td>${escapeHTML(row.division)}</td><td>${row.wins}</td><td>${row.losses}</td>
       <td>${pct(row.win_pct)}</td><td>${Number(row.points_for_pg).toFixed(1)}</td><td>${Number(row.points_against_pg).toFixed(1)}</td>
       <td class="${tone(row.point_diff_pg)}">${signed(row.point_diff_pg)}</td><td>${Number(row.games_back).toFixed(1)}</td>
@@ -260,13 +264,13 @@ function fitCanvas(canvas) {
   return { context, width, height };
 }
 
-function drawLineChart(canvas, dates, series) {
+function drawLineChart(canvas, dates, series, emptyMessage = "More daily snapshots will build this trend.") {
   if (!canvas) return;
   const { context: ctx, width, height } = fitCanvas(canvas);
   const left = 44, right = 12, top = 12, bottom = 31;
   const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const values = series.flatMap(item => item.values.filter(Number.isFinite));
-  if (!dates.length || !values.length) { ctx.fillStyle = "#8999ad"; ctx.font = "12px sans-serif"; ctx.fillText("More daily snapshots will build this trend.", left, height / 2); return; }
+  if (!dates.length || !values.length) { ctx.fillStyle = "#8999ad"; ctx.font = "12px sans-serif"; ctx.fillText(emptyMessage, left, height / 2); return; }
   let min = Math.min(...values), max = Math.max(...values);
   if (min === max) { min -= 1; max += 1; }
   const pad = (max - min) * .1;
@@ -331,7 +335,8 @@ function latestByTeam() {
 }
 
 function renderFindings() {
-  const snapshots = groupByDate(appState.history);
+  const snapshots = groupByDate(appState.history).map(([day, rows]) => [day, rankedTeams(rows)]);
+  const latestRanked = rankedTeams(appState.latest);
   const first = snapshots[0]?.[1] ?? [];
   const firstMap = new Map(first.map(row => [String(row.item_id), row]));
   const changes = appState.latest.map(row => {
@@ -386,8 +391,8 @@ function renderFindings() {
     drawBars(document.getElementById("finding-3-chart"), []);
   }
 
-  const conferenceValues = [...new Set(appState.latest.map(row => row.conference))].sort().map(conference => {
-    const rows = appState.latest.filter(row => row.conference === conference).sort((a, b) => Number(a.rank) - Number(b.rank));
+  const conferenceValues = [...new Set(latestRanked.map(row => row.conference))].sort().map(conference => {
+    const rows = latestRanked.filter(row => row.conference === conference).sort((a, b) => Number(a.rank) - Number(b.rank));
     if (rows.length < 10) return null;
     const gap = (Number(rows[0].win_pct) - Number(rows[9].win_pct)) * 100;
     return { label: conference, value: gap, leader: rows[0].item, tenth: rows[9].item };
@@ -402,29 +407,35 @@ function renderFindings() {
 }
 
 function renderTrends() {
-  const snapshots = groupByDate(appState.history);
+  const snapshots = groupByDate(appState.history).map(([day, rows]) => [day, rankedTeams(rows)]);
   const dates = snapshots.map(([day]) => day);
-  setText("history-date-count", `${dates.length} successful dates`);
-  const teams = appState.latest.slice().sort(byStandings);
-  const teamSelect = document.getElementById("team-select");
-  if (!teamSelect) return;
-  teamSelect.innerHTML = "";
+  setText("history-date-count", `${dates.length} successful ${dates.length === 1 ? "date" : "dates"}`);
+  const teams = rankedTeams(appState.latest);
+  const teamFilterList = document.getElementById("team-filter-list");
+  const teamSearch = document.getElementById("team-search");
+  const clearTeamFilter = document.getElementById("clear-team-filter");
+  if (!teamFilterList) return;
+  teamFilterList.innerHTML = "";
   teams.forEach((team, index) => {
-    const option = document.createElement("option");
-    option.value = String(team.item_id);
-    option.textContent = team.item;
-    if (index < 6) option.selected = true;
-    teamSelect.append(option);
+    const label = document.createElement("label");
+    label.className = "team-filter-option";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = String(team.item_id);
+    checkbox.checked = index < 6;
+    checkbox.setAttribute("aria-label", `Include ${team.item} in the graph`);
+    const name = document.createElement("span");
+    name.textContent = team.item;
+    label.append(checkbox, name);
+    teamFilterList.append(label);
   });
   const metricSelect = document.getElementById("metric-select");
-  const labels = { win_pct: "Winning percentage", wins: "Wins", losses: "Losses", rank: "Conference rank", points_for_pg: "Points per game", points_against_pg: "Opponent points per game", point_diff_pg: "Point differential per game", games_back: "Games back" };
+  const labels = { win_pct: "Winning percentage", wins: "Wins", losses: "Losses", rank: "League rank", points_for_pg: "Points per game", points_against_pg: "Opponent points per game", point_diff_pg: "Point differential per game", games_back: "Games back" };
   function drawHistory() {
-    const metric = metricSelect.value;
-    const selected = [...teamSelect.selectedOptions].slice(0, 6).map(option => option.value);
-    const defaults = teams.slice(0, 6).map(row => String(row.item_id));
-    const ids = selected.length ? selected : defaults;
+    const metric = metricSelect?.value || "win_pct";
+    const selected = [...teamFilterList.querySelectorAll("input:checked")].map(input => input.value);
     const labelsById = new Map(teams.map(row => [String(row.item_id), row.item]));
-    const series = ids.map((id, seriesIndex) => ({
+    const series = selected.map((id, seriesIndex) => ({
       name: labelsById.get(id) ?? id,
       color: CHART_COLORS[seriesIndex % CHART_COLORS.length],
       values: snapshots.map(([, rows]) => {
@@ -434,12 +445,44 @@ function renderTrends() {
       })
     }));
     setText("history-chart-title", `${labels[metric]} over time`);
-    drawLineChart(document.getElementById("history-chart"), dates, series);
+    const chartMessage = !dates.length
+      ? "Waiting for the first successful snapshot."
+      : !selected.length
+        ? "Choose one or more teams in the filter above."
+        : "No values are available for this selection.";
+    drawLineChart(document.getElementById("history-chart"), dates, series, chartMessage);
+    const filterCount = document.getElementById("team-filter-count");
+    if (filterCount) filterCount.textContent = `${selected.length} selected · max 6`;
+    const chartStatus = !selected.length
+      ? "No teams selected. Choose teams above to show their values."
+      : dates.length === 1
+        ? "One successful date is available. The selected teams appear as points; trend lines form after another daily snapshot."
+        : `${dates.length} daily snapshots are available. Use the team checkboxes to filter the graph.`;
+    setText("chart-status", chartStatus);
     const legend = document.getElementById("history-legend");
     if (legend) legend.innerHTML = series.map(item => `<span class="legend-item"><i class="legend-dot" style="background:${item.color}"></i>${escapeHTML(item.name)}</span>`).join("");
   }
   metricSelect?.addEventListener("change", drawHistory);
-  teamSelect.addEventListener("change", drawHistory);
+  teamFilterList.addEventListener("change", event => {
+    if (!event.target.matches('input[type="checkbox"]')) return;
+    const checked = teamFilterList.querySelectorAll("input:checked");
+    if (checked.length > 6) {
+      event.target.checked = false;
+      setText("team-filter-count", "Choose up to six");
+      return;
+    }
+    drawHistory();
+  });
+  teamSearch?.addEventListener("input", () => {
+    const query = teamSearch.value.trim().toLocaleLowerCase();
+    teamFilterList.querySelectorAll(".team-filter-option").forEach(option => {
+      option.hidden = !option.textContent.toLocaleLowerCase().includes(query);
+    });
+  });
+  clearTeamFilter?.addEventListener("click", () => {
+    teamFilterList.querySelectorAll("input:checked").forEach(input => { input.checked = false; });
+    drawHistory();
+  });
   appState.redrawHistory = drawHistory;
   drawHistory();
   renderFindings();
