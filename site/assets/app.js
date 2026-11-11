@@ -49,8 +49,11 @@ function groupByDate(rows) {
 }
 
 function byStandings(a, b) {
-  const conference = String(a.conference).localeCompare(String(b.conference));
-  return conference || Number(a.rank) - Number(b.rank) || String(a.item).localeCompare(String(b.item));
+  return Number(a.rank) - Number(b.rank)
+    || Number(b.win_pct) - Number(a.win_pct)
+    || Number(b.wins) - Number(a.wins)
+    || Number(b.point_diff_pg) - Number(a.point_diff_pg)
+    || String(a.item_id).localeCompare(String(b.item_id));
 }
 
 function teamInitials(name) {

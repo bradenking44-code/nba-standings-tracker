@@ -111,7 +111,7 @@ def parse_standings(raw: bytes | str) -> list[dict[str, object]]:
             conference_group.get("abbreviation") or conference_group.get("name") or ""
         ).strip()
 
-        for rank, entry in enumerate(entries, start=1):
+        for entry in entries:
             if not isinstance(entry, dict):
                 raise ValueError("ESPN standings entry is not an object")
             team = entry.get("team")
@@ -146,7 +146,7 @@ def parse_standings(raw: bytes | str) -> list[dict[str, object]]:
                     "source": SOURCE_ID,
                     "conference": conference,
                     "division": TEAM_DIVISIONS.get(abbreviation, ""),
-                    "rank": rank,
+                    "rank": 0,
                     "wins": wins,
                     "losses": losses,
                     "win_pct": round(_as_float(_stat_value(stats, "winPercent"), "winPercent"), 3),
@@ -174,4 +174,14 @@ def parse_standings(raw: bytes | str) -> list[dict[str, object]]:
         raise ValueError(f"ESPN response returned only {len(rows)} teams; expected at least 10")
     if len({row["item_id"] for row in rows}) != len(rows):
         raise ValueError("ESPN response contains duplicate team IDs")
-    return sorted(rows, key=lambda row: str(row["item_id"]))
+    rows.sort(
+        key=lambda row: (
+            -float(row["win_pct"]),
+            -int(row["wins"]),
+            -float(row["point_diff_pg"]),
+            str(row["item_id"]),
+        )
+    )
+    for rank, row in enumerate(rows, start=1):
+        row["rank"] = rank
+    return rows

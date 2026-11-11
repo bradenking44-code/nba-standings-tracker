@@ -28,7 +28,7 @@ The tracker keeps all 30 team rows returned by the source. The stable ESPN team 
 | `source` | Source identifier | `espn` |
 | `conference` | Eastern or Western conference | Text (`East` / `West`) |
 | `division` | NBA division | Text |
-| `rank` | Team's position in ESPN's conference standings order | Integer |
+| `rank` | League-wide position, ordered by win percentage, wins, then point differential | Integer |
 | `wins` | Regular-season wins | Games |
 | `losses` | Regular-season losses | Games |
 | `win_pct` | Winning percentage | Decimal from 0 to 1 |
