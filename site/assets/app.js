@@ -264,50 +264,83 @@ function fitCanvas(canvas) {
   return { context, width, height };
 }
 
-function drawLineChart(canvas, dates, series, emptyMessage = "More daily snapshots will build this trend.") {
+function teamChartColor(id) {
+  let hash = 2166136261;
+  for (const char of String(id)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  const hue = (hash >>> 0) % 360;
+  return `hsl(${hue} 76% 68%)`;
+}
+
+function drawLineChart(canvas, dates, series, metric, metricLabel, emptyMessage = "More daily snapshots will build this trend.") {
   if (!canvas) return;
   const { context: ctx, width, height } = fitCanvas(canvas);
-  const left = 44, right = 12, top = 12, bottom = 31;
+  const left = 62, right = 14, top = 20, bottom = 48;
   const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const values = series.flatMap(item => item.values.filter(Number.isFinite));
-  if (!dates.length || !values.length) { ctx.fillStyle = "#8999ad"; ctx.font = "12px sans-serif"; ctx.fillText(emptyMessage, left, height / 2); return; }
-  let min = Math.min(...values), max = Math.max(...values);
-  if (min === max) { min -= 1; max += 1; }
-  const pad = (max - min) * .1;
-  min -= pad; max += pad;
+  if (!dates.length || !values.length) {
+    ctx.fillStyle = "#8999ad";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(emptyMessage, left, height / 2);
+    return;
+  }
+  const isRank = metric === "rank";
+  let min = isRank ? 1 : Math.min(...values);
+  let max = isRank ? 30 : Math.max(...values);
+  if (!isRank) {
+    if (min === max) { min -= 1; max += 1; }
+    const pad = (max - min) * .1;
+    min -= pad;
+    max += pad;
+  }
   ctx.font = "9px monospace";
   ctx.strokeStyle = "rgba(146,166,190,.16)";
   ctx.fillStyle = "#8090a5";
   for (let tick = 0; tick <= 4; tick += 1) {
     const y = top + (plotHeight * tick) / 4;
-    const value = max - ((max - min) * tick) / 4;
+    const value = isRank ? min + ((max - min) * tick) / 4 : max - ((max - min) * tick) / 4;
     ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
-    ctx.fillText(value.toFixed(2), 2, y + 3);
+    const label = isRank ? String(Math.round(value)) : value.toFixed(2);
+    ctx.textAlign = "right";
+    ctx.fillText(label, left - 8, y + 3);
   }
+  ctx.strokeStyle = "rgba(146,166,190,.48)";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, top + plotHeight); ctx.lineTo(width - right, top + plotHeight); ctx.stroke();
   const labelStep = Math.max(1, Math.ceil(dates.length / 6));
   dates.forEach((day, index) => {
     if (index % labelStep !== 0 && index !== dates.length - 1) return;
     const x = left + (dates.length < 2 ? plotWidth / 2 : (plotWidth * index) / (dates.length - 1));
     ctx.fillStyle = "#8090a5";
-    ctx.fillText(day.slice(5), Math.min(x - 15, width - 40), height - 9);
+    ctx.textAlign = "center";
+    ctx.fillText(day.slice(5), x, top + plotHeight + 14);
   });
-  series.forEach((item, seriesIndex) => {
-    ctx.beginPath(); ctx.strokeStyle = CHART_COLORS[seriesIndex % CHART_COLORS.length]; ctx.lineWidth = 2;
+  series.forEach(item => {
+    const color = item.color || "#77b8ff";
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = series.length > 12 ? 1.15 : 2;
     let started = false;
     item.values.forEach((value, index) => {
       if (!Number.isFinite(value)) { started = false; return; }
       const x = left + (dates.length < 2 ? plotWidth / 2 : (plotWidth * index) / (dates.length - 1));
-      const y = top + ((max - value) / (max - min)) * plotHeight;
+      const y = top + (isRank ? ((value - min) / (max - min)) : ((max - value) / (max - min))) * plotHeight;
       if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     });
     ctx.stroke();
     item.values.forEach((value, index) => {
       if (!Number.isFinite(value)) return;
       const x = left + (dates.length < 2 ? plotWidth / 2 : (plotWidth * index) / (dates.length - 1));
-      const y = top + ((max - value) / (max - min)) * plotHeight;
-      ctx.beginPath(); ctx.fillStyle = CHART_COLORS[seriesIndex % CHART_COLORS.length]; ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+      const y = top + (isRank ? ((value - min) / (max - min)) : ((max - value) / (max - min))) * plotHeight;
+      ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, series.length > 12 ? 2 : 2.6, 0, Math.PI * 2); ctx.fill();
     });
   });
+  ctx.fillStyle = "#aab6c4";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Snapshot date", left + plotWidth / 2, height - 5);
+  ctx.save();
+  ctx.translate(14, top + plotHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(isRank ? "League rank (1 = best)" : metricLabel, 0, 0);
+  ctx.restore();
 }
 
 function drawBars(canvas, values, suffix = "") {
@@ -414,15 +447,16 @@ function renderTrends() {
   const teamFilterList = document.getElementById("team-filter-list");
   const teamSearch = document.getElementById("team-search");
   const clearTeamFilter = document.getElementById("clear-team-filter");
+  const selectAllTeams = document.getElementById("select-all-teams");
   if (!teamFilterList) return;
   teamFilterList.innerHTML = "";
-  teams.forEach((team, index) => {
+  teams.forEach(team => {
     const label = document.createElement("label");
     label.className = "team-filter-option";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = String(team.item_id);
-    checkbox.checked = index < 6;
+    checkbox.checked = true;
     checkbox.setAttribute("aria-label", `Include ${team.item} in the graph`);
     const name = document.createElement("span");
     name.textContent = team.item;
@@ -435,9 +469,9 @@ function renderTrends() {
     const metric = metricSelect?.value || "win_pct";
     const selected = [...teamFilterList.querySelectorAll("input:checked")].map(input => input.value);
     const labelsById = new Map(teams.map(row => [String(row.item_id), row.item]));
-    const series = selected.map((id, seriesIndex) => ({
+    const series = selected.map(id => ({
       name: labelsById.get(id) ?? id,
-      color: CHART_COLORS[seriesIndex % CHART_COLORS.length],
+      color: teamChartColor(id),
       values: snapshots.map(([, rows]) => {
         const row = rows.find(entry => String(entry.item_id) === id);
         const value = row ? Number(row[metric]) : NaN;
@@ -450,27 +484,23 @@ function renderTrends() {
       : !selected.length
         ? "Choose one or more teams in the filter above."
         : "No values are available for this selection.";
-    drawLineChart(document.getElementById("history-chart"), dates, series, chartMessage);
+    drawLineChart(document.getElementById("history-chart"), dates, series, metric, labels[metric], chartMessage);
     const filterCount = document.getElementById("team-filter-count");
-    if (filterCount) filterCount.textContent = `${selected.length} selected · max 6`;
+    if (filterCount) filterCount.textContent = `${selected.length} of ${teams.length} teams selected`;
     const chartStatus = !selected.length
       ? "No teams selected. Choose teams above to show their values."
       : dates.length === 1
-        ? "One successful date is available. The selected teams appear as points; trend lines form after another daily snapshot."
-        : `${dates.length} daily snapshots are available. Use the team checkboxes to filter the graph.`;
+        ? `One successful date is available. ${selected.length === teams.length ? `All ${teams.length} teams` : "The selected teams"} appear as points; trend lines form after another daily snapshot.`
+        : `${dates.length} daily snapshots are available. The horizontal axis shows snapshot date; the vertical axis shows ${labels[metric].toLowerCase()}.`;
     setText("chart-status", chartStatus);
+    const chart = document.getElementById("history-chart");
+    if (chart) chart.setAttribute("aria-label", `${labels[metric]} by snapshot date for ${selected.length} selected teams`);
     const legend = document.getElementById("history-legend");
     if (legend) legend.innerHTML = series.map(item => `<span class="legend-item"><i class="legend-dot" style="background:${item.color}"></i>${escapeHTML(item.name)}</span>`).join("");
   }
   metricSelect?.addEventListener("change", drawHistory);
   teamFilterList.addEventListener("change", event => {
     if (!event.target.matches('input[type="checkbox"]')) return;
-    const checked = teamFilterList.querySelectorAll("input:checked");
-    if (checked.length > 6) {
-      event.target.checked = false;
-      setText("team-filter-count", "Choose up to six");
-      return;
-    }
     drawHistory();
   });
   teamSearch?.addEventListener("input", () => {
@@ -481,6 +511,10 @@ function renderTrends() {
   });
   clearTeamFilter?.addEventListener("click", () => {
     teamFilterList.querySelectorAll("input:checked").forEach(input => { input.checked = false; });
+    drawHistory();
+  });
+  selectAllTeams?.addEventListener("click", () => {
+    teamFilterList.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = true; });
     drawHistory();
   });
   appState.redrawHistory = drawHistory;

@@ -26,20 +26,20 @@
       <div class="section-heading"><div><p class="eyebrow">DAILY HISTORY</p><h2 id="history-chart-title">Team performance over time</h2></div><span id="history-date-count" class="subtle-tag">Loading history</span></div>
       <div class="chart-controls">
         <label>MEASURE<select id="metric-select">
-          <option value="win_pct">Winning percentage</option><option value="wins">Wins</option><option value="losses">Losses</option>
-          <option value="rank">League rank</option><option value="points_for_pg">Points per game</option>
+          <option value="rank" selected>League rank</option><option value="win_pct">Winning percentage</option>
+          <option value="wins">Wins</option><option value="losses">Losses</option><option value="points_for_pg">Points per game</option>
           <option value="points_against_pg">Opponent points per game</option><option value="point_diff_pg">Point differential per game</option>
           <option value="games_back">Games back</option>
         </select></label>
         <section class="team-filter" aria-label="Filter chart by team">
           <div class="team-filter-heading"><span>FILTER TEAMS</span><span id="team-filter-count">Loading teams</span></div>
-          <div class="team-filter-tools"><input id="team-search" type="search" placeholder="Find a team…" aria-label="Search teams"><button id="clear-team-filter" class="button button-quiet" type="button">Clear teams</button></div>
+          <div class="team-filter-tools"><input id="team-search" type="search" placeholder="Find a team…" aria-label="Search teams"><button id="select-all-teams" class="button button-quiet" type="button">All teams</button><button id="clear-team-filter" class="button button-quiet" type="button">Clear teams</button></div>
           <div id="team-filter-list" class="team-filter-list" role="group" aria-label="Teams to include in the graph"></div>
         </section>
       </div>
       <div class="chart-wrap chart-large"><canvas id="history-chart" aria-label="Selected NBA metric across daily snapshots" role="img"></canvas></div>
       <div id="history-legend" class="chart-legend"></div>
-      <p id="chart-status" class="chart-footnote">Data points are daily snapshots. Select teams above to filter the graph.</p>
+      <p id="chart-status" class="chart-footnote">All 30 teams are shown by league rank. The horizontal axis is snapshot date; the vertical axis is league rank.</p>
     </section>
     <section class="findings-grid">
       <article class="panel finding-card"><p class="eyebrow">01 · SEASON ARC</p><h2 id="finding-1-title">Change since opening snapshot</h2><p id="finding-1-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-1-chart" aria-label="Change in win percentage since first tracked snapshot" role="img"></canvas></div></article>
