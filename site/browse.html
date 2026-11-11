@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1424">
+  <meta name="description" content="Search, filter, sort, and shortlist NBA teams in the latest standings.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <title>NBA Standings Tracker · Browse</title>
+</head>
+<body data-page="browse">
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="NBA Standings Tracker home"><span class="brand-mark">NBA</span><span>STANDINGS<br><b>TRACKER</b></span></a>
+    <nav aria-label="Main navigation"><a href="index.html">Today</a><a class="active" href="browse.html">Browse</a><a href="trends.html">Trends</a></nav>
+    <div class="live-label"><span class="pulse"></span> DAILY SNAPSHOT</div>
+  </header>
+  <main class="page-shell">
+    <section class="page-intro">
+      <p class="eyebrow">THE LEAGUE, TEAM BY TEAM</p>
+      <h1>Find your <em>edge.</em></h1>
+      <p>Search every team, narrow the field, and sort the numbers. Star teams to keep your own shortlist on this device.</p>
+    </section>
+    <section class="panel browse-panel">
+      <div class="browse-toolbar">
+        <label class="search-control"><span class="sr-only">Search teams</span><span aria-hidden="true">⌕</span><input id="team-search" type="search" placeholder="Search teams…" autocomplete="off"></label>
+        <label class="select-control"><span class="sr-only">Filter conference</span><select id="conference-filter"><option value="">All conferences</option></select></label>
+        <label class="select-control"><span class="sr-only">Filter division</span><select id="division-filter"><option value="">All divisions</option></select></label>
+        <button id="shortlist-toggle" class="button button-quiet" type="button" aria-pressed="false">☆ Shortlist only</button>
+      </div>
+      <div class="table-meta"><span id="browse-count">Loading teams…</span><span>Click any numeric heading to sort</span></div>
+      <div class="table-wrap browse-table-wrap">
+        <table id="browse-table">
+          <thead><tr>
+            <th><button data-sort="rank" type="button">RANK <span>↕</span></button></th>
+            <th><button data-sort="item" type="button">TEAM <span>↕</span></button></th>
+            <th><button data-sort="conference" type="button">CONFERENCE <span>↕</span></button></th>
+            <th><button data-sort="division" type="button">DIVISION <span>↕</span></button></th>
+            <th><button data-sort="wins" type="button">WINS <span>↕</span></button></th>
+            <th><button data-sort="losses" type="button">LOSSES <span>↕</span></button></th>
+            <th><button data-sort="win_pct" type="button">WIN % <span>↕</span></button></th>
+            <th><button data-sort="points_for_pg" type="button">PTS / G <span>↕</span></button></th>
+            <th><button data-sort="points_against_pg" type="button">OPP / G <span>↕</span></button></th>
+            <th><button data-sort="point_diff_pg" type="button">DIFF / G <span>↕</span></button></th>
+            <th><button data-sort="games_back" type="button">GB <span>↕</span></button></th>
+            <th>STAR</th>
+          </tr></thead>
+          <tbody><tr><td colspan="12" class="loading-cell">Loading standings…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <p class="data-note">Shortlist stars are saved in local browser storage and stay on this device after a refresh.</p>
+  </main>
+  <footer class="site-footer"><span>COURTSIDE DATA, EVERY DAY</span><span>NBA STANDINGS TRACKER · <span id="footer-year">2026</span></span></footer>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
+

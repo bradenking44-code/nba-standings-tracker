@@ -1,0 +1,14 @@
+{
+  "name": "NBA Standings Tracker",
+  "short_name": "NBA Standings",
+  "description": "Daily NBA standings, team filters, and season trends.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1424",
+  "theme_color": "#0b1424",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
+

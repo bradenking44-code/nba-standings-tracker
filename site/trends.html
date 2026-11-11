@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1424">
+  <meta name="description" content="Explore how NBA standings and team performance metrics change across daily snapshots.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <title>NBA Standings Tracker · Trends</title>
+</head>
+<body data-page="trends">
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="NBA Standings Tracker home"><span class="brand-mark">NBA</span><span>STANDINGS<br><b>TRACKER</b></span></a>
+    <nav aria-label="Main navigation"><a href="index.html">Today</a><a href="browse.html">Browse</a><a class="active" href="trends.html">Trends</a></nav>
+    <div class="live-label"><span class="pulse"></span> DAILY SNAPSHOT</div>
+  </header>
+  <main class="page-shell">
+    <section class="page-intro trends-intro">
+      <p class="eyebrow">THE SEASON IN MOTION</p>
+      <h1>Every day leaves <em>a trace.</em></h1>
+      <p>All figures and findings below are computed in your browser from the saved team-by-day history.</p>
+    </section>
+    <section class="panel chart-panel">
+      <div class="section-heading"><div><p class="eyebrow">DAILY HISTORY</p><h2 id="history-chart-title">Team performance over time</h2></div><span id="history-date-count" class="subtle-tag">Loading history</span></div>
+      <div class="chart-controls">
+        <label>MEASURE<select id="metric-select">
+          <option value="win_pct">Winning percentage</option><option value="wins">Wins</option><option value="losses">Losses</option>
+          <option value="rank">Conference rank</option><option value="points_for_pg">Points per game</option>
+          <option value="points_against_pg">Opponent points per game</option><option value="point_diff_pg">Point differential per game</option>
+          <option value="games_back">Games back</option>
+        </select></label>
+        <label>TEAMS<select id="team-select" multiple size="1" aria-label="Choose teams to show"><option value="">All teams (select up to six)</option></select></label>
+      </div>
+      <div class="chart-wrap chart-large"><canvas id="history-chart" aria-label="Selected NBA metric across daily snapshots" role="img"></canvas></div>
+      <div id="history-legend" class="chart-legend"></div>
+      <p class="chart-footnote">Data points are daily snapshots. Team rank is within its conference; all other values are reported by the source.</p>
+    </section>
+    <section class="findings-grid">
+      <article class="panel finding-card"><p class="eyebrow">01 · SEASON ARC</p><h2 id="finding-1-title">Biggest gain since opening snapshot</h2><p id="finding-1-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-1-chart" aria-label="Change in win percentage since first tracked snapshot" role="img"></canvas></div></article>
+      <article class="panel finding-card"><p class="eyebrow">02 · DAILY SWING</p><h2 id="finding-2-title">Largest day-to-day win-percentage move</h2><p id="finding-2-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-2-chart" aria-label="Largest daily moves in win percentage" role="img"></canvas></div></article>
+      <article class="panel finding-card"><p class="eyebrow">03 · SCORING MARGIN</p><h2 id="finding-3-title">Best point differential per game</h2><p id="finding-3-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-3-chart" aria-label="Current leading teams by point differential" role="img"></canvas></div></article>
+      <article class="panel finding-card"><p class="eyebrow">04 · CONFERENCE RACE</p><h2 id="finding-4-title">The standings gap from first to tenth</h2><p id="finding-4-copy" class="finding-copy">Calculating from the history…</p><div class="chart-wrap chart-small"><canvas id="finding-4-chart" aria-label="Win percentage gap between first and tenth in each conference" role="img"></canvas></div></article>
+    </section>
+  </main>
+  <footer class="site-footer"><span>COURTSIDE DATA, EVERY DAY</span><span>NBA STANDINGS TRACKER · <span id="footer-year">2026</span></span></footer>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
+

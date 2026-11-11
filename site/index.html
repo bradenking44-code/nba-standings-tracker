@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1424">
+  <meta name="description" content="A daily NBA standings tracker with historical trends and team-level snapshots.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <title>NBA Standings Tracker · Today</title>
+</head>
+<body data-page="today">
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="NBA Standings Tracker home">
+      <span class="brand-mark">NBA</span><span>STANDINGS<br><b>TRACKER</b></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a class="active" href="index.html">Today</a>
+      <a href="browse.html">Browse</a>
+      <a href="trends.html">Trends</a>
+    </nav>
+    <div class="live-label"><span class="pulse"></span> DAILY SNAPSHOT</div>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero hero-today">
+      <div>
+        <p id="season-label" class="eyebrow">NBA REGULAR SEASON · DAILY SNAPSHOT</p>
+        <h1>The race takes shape<br><em>one game at a time.</em></h1>
+        <p class="hero-copy">Standings, scoring margins, and day-over-day movement for all 30 NBA teams.</p>
+      </div>
+      <div class="snapshot-stamp">
+        <span class="eyebrow">LATEST SNAPSHOT</span>
+        <strong id="snapshot-date">Loading…</strong>
+        <small id="snapshot-time">Waiting for tracker data</small>
+      </div>
+    </section>
+
+    <section class="metric-grid" aria-label="League snapshot metrics">
+      <article class="metric-card"><span class="metric-label">TEAMS TRACKED</span><strong id="metric-teams">—</strong><small id="metric-teams-note">Across East and West</small></article>
+      <article class="metric-card"><span class="metric-label">TOP RECORD</span><strong id="metric-leader">—</strong><small id="metric-record">Waiting for standings</small></article>
+      <article class="metric-card"><span class="metric-label">BEST POINT DIFF.</span><strong id="metric-differential">—</strong><small id="metric-diff-team">—</small></article>
+      <article class="metric-card"><span class="metric-label">TRACKED DAYS</span><strong id="metric-days">—</strong><small id="metric-run-status">Daily archive</small></article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel panel-wide">
+        <div class="section-heading">
+          <div><p class="eyebrow">THE FULL FIELD</p><h2>Latest standings</h2></div>
+          <a class="text-link" href="browse.html">Explore every team <span>↗</span></a>
+        </div>
+        <div class="table-wrap">
+          <table id="today-table">
+            <thead><tr><th>RANK</th><th>TEAM</th><th>W–L</th><th>WIN %</th><th>PTS / G</th><th>DIFF / G</th><th>CHANGE</th></tr></thead>
+            <tbody><tr><td colspan="7" class="loading-cell">Loading standings…</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+      <aside class="panel movers-panel">
+        <div class="section-heading"><div><p class="eyebrow">SINCE LAST SNAPSHOT</p><h2>Biggest moves</h2></div></div>
+        <p class="panel-intro">Ranked by change in winning percentage. Each game shifts the picture.</p>
+        <div id="movers-list" class="movers-list"><p class="muted">Loading team movement…</p></div>
+        <a class="text-link" href="trends.html">See season trends <span>↗</span></a>
+      </aside>
+    </section>
+
+    <section class="panel source-panel">
+      <div class="section-heading"><div><p class="eyebrow">COLLECTION HEALTH</p><h2>Daily run status</h2></div><span id="run-pill" class="status-pill status-unknown">Checking</span></div>
+      <div class="status-row"><span>Data source</span><strong id="source-status">Loading…</strong></div>
+      <div class="status-row"><span>Successful snapshot dates</span><strong id="successful-days">—</strong></div>
+      <div class="status-row"><span>New / disappeared teams today</span><strong id="team-changes">—</strong></div>
+      <p id="source-error" class="source-error" hidden></p>
+    </section>
+    <p class="data-note">Standings are snapshots from the NBA Stats public standings feed. Values can remain unchanged on days without completed games.</p>
+  </main>
+
+  <footer class="site-footer"><span>COURTSIDE DATA, EVERY DAY</span><span>NBA STANDINGS TRACKER · <span id="footer-year">2026</span></span></footer>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
+
