@@ -16,12 +16,13 @@ BASE_URL = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
 TEAM_DIVISIONS = {
     "ATL": "Southeast", "BOS": "Atlantic", "BKN": "Atlantic", "CHA": "Southeast",
     "CHI": "Central", "CLE": "Central", "DAL": "Southwest", "DEN": "Northwest",
-    "DET": "Central", "GSW": "Pacific", "HOU": "Southwest", "IND": "Central",
-    "LAC": "Pacific", "LAL": "Pacific", "MEM": "Southwest", "MIA": "Southeast",
-    "MIL": "Central", "MIN": "Northwest", "NOP": "Southwest", "NYK": "Atlantic",
-    "OKC": "Northwest", "ORL": "Southeast", "PHI": "Atlantic", "PHX": "Pacific",
-    "POR": "Northwest", "SAC": "Pacific", "SAS": "Southwest", "TOR": "Atlantic",
-    "UTA": "Northwest", "WAS": "Southeast",
+    "DET": "Central", "GS": "Pacific", "GSW": "Pacific", "HOU": "Southwest",
+    "IND": "Central", "LAC": "Pacific", "LAL": "Pacific", "MEM": "Southwest",
+    "MIA": "Southeast", "MIL": "Central", "MIN": "Northwest", "NO": "Southwest",
+    "NOP": "Southwest", "NY": "Atlantic", "NYK": "Atlantic", "OKC": "Northwest",
+    "ORL": "Southeast", "PHI": "Atlantic", "PHX": "Pacific", "POR": "Northwest",
+    "SAC": "Pacific", "SA": "Southwest", "SAS": "Southwest", "TOR": "Atlantic",
+    "UTA": "Northwest", "UTAH": "Northwest", "WAS": "Southeast", "WSH": "Southeast",
 }
 
 
