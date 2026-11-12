@@ -80,7 +80,7 @@ The site provides:
 
 - **Today**: latest standings ranked league-wide from best to worst, each team's change since the previous snapshot, the five biggest moves, source status, and run counts.
 - **Browse**: search by team name, filters for conference and division, sort controls for every numeric standings column, and a shortlist saved in browser storage.
-- **Trends**: a daily history chart with League rank selected by default, all teams shown, and a searchable team filter. A single saved date appears as a labeled standings plot that rises from rank 1 at the bottom-left to rank 30 at the top-right; as daily history accumulates, the chart shows rank over time with rank values increasing upward. Four findings are computed in the browser from `history.csv`.
+- **Trends**: a daily history chart with League rank selected by default, all teams shown, and a searchable team filter. Single-date dots use team colors, with the horizontal rank scale running from 30 on the left to 1 on the right; as daily history accumulates, the chart shows rank over time with rank values increasing upward. Four findings are computed in the browser from `history.csv`.
 - A web-app manifest and service worker. Once loaded online, pages and the latest data remain available offline.
 
 ## Setup and checks

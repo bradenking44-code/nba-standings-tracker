@@ -3,6 +3,18 @@ const NUMERIC_FIELDS = new Set([
   "point_diff_pg", "games_back"
 ]);
 const CHART_COLORS = ["#ff885d", "#77b8ff", "#5bd3ad", "#ffc36a", "#c397ff", "#ff777d"];
+const TEAM_CHART_COLORS = {
+  "Atlanta Hawks": "#E03A3E", "Boston Celtics": "#00A651", "Brooklyn Nets": "#F4F4F4",
+  "Charlotte Hornets": "#00A6A6", "Chicago Bulls": "#CE1141", "Cleveland Cavaliers": "#FDBB30",
+  "Dallas Mavericks": "#0088CC", "Denver Nuggets": "#FEC524", "Detroit Pistons": "#C8102E",
+  "Golden State Warriors": "#FFC72C", "Houston Rockets": "#E03A3E", "Indiana Pacers": "#FDBB30",
+  "LA Clippers": "#E31837", "Los Angeles Lakers": "#FDB927", "Memphis Grizzlies": "#83A9D8",
+  "Miami Heat": "#F9A01B", "Milwaukee Bucks": "#EEE1C6", "Minnesota Timberwolves": "#78BE20",
+  "New Orleans Pelicans": "#C8102E", "New York Knicks": "#F58426", "Oklahoma City Thunder": "#EF3B24",
+  "Orlando Magic": "#28A4E8", "Philadelphia 76ers": "#1D8FE1", "Phoenix Suns": "#E56020",
+  "Portland Trail Blazers": "#E03A3E", "Sacramento Kings": "#A47BC2", "San Antonio Spurs": "#C4CED4",
+  "Toronto Raptors": "#CE1141", "Utah Jazz": "#68B7E8", "Washington Wizards": "#E31837"
+};
 const STORAGE_KEY = "nba-standings-shortlist-v1";
 const appState = { history: [], status: {}, latest: [], previous: [], latestDate: "", previousDate: "", stars: new Set(), sortKey: "rank", sortDir: 1, shortlistOnly: false, redrawHistory: null };
 
@@ -264,7 +276,8 @@ function fitCanvas(canvas) {
   return { context, width, height };
 }
 
-function teamChartColor(id) {
+function teamChartColor(name, id = name) {
+  if (TEAM_CHART_COLORS[name]) return TEAM_CHART_COLORS[name];
   let hash = 2166136261;
   for (const char of String(id)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   const hue = (hash >>> 0) % 360;
@@ -350,7 +363,7 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
   const right = 20, top = 24, bottom = 52;
   const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const rows = [...series].filter(item => Number.isFinite(item.values[0]))
-    .sort((a, b) => b.rank - a.rank || a.name.localeCompare(b.name));
+    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
   if (!rows.length) {
     ctx.fillStyle = "#8999ad";
     ctx.font = "12px sans-serif";
@@ -367,14 +380,16 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
     min -= pad;
     max += pad;
   }
-  const xFor = value => left + ((value - min) / (max - min)) * plotWidth;
+  const xFor = value => left + ((isRank ? max - value : value - min) / (max - min)) * plotWidth;
   const rowHeight = plotHeight / rows.length;
 
   ctx.font = "9px monospace";
   ctx.textAlign = "center";
   ctx.fillStyle = "#8090a5";
   ctx.strokeStyle = "rgba(146,166,190,.16)";
-  const ticks = isRank && plotWidth < 250 ? [1, 15, 30] : Array.from({ length: 7 }, (_, index) => min + ((max - min) * index) / 6);
+  const ticks = isRank
+    ? (plotWidth < 250 ? [30, 15, 1] : Array.from({ length: 7 }, (_, index) => max - ((max - min) * index) / 6))
+    : Array.from({ length: 7 }, (_, index) => min + ((max - min) * index) / 6);
   ticks.forEach(value => {
     const x = xFor(value);
     ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + plotHeight); ctx.stroke();
@@ -401,11 +416,11 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
   ctx.fillStyle = "#aab6c4";
   ctx.font = "10px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(isRank ? "League rank (1 = best)" : metricLabel, left + plotWidth / 2, height - 5);
+  ctx.fillText(isRank ? "League rank (30 left → 1 right)" : metricLabel, left + plotWidth / 2, height - 5);
   ctx.save();
   ctx.translate(13, top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText("Teams, ordered from worst to best", 0, 0);
+  ctx.fillText("Teams, ordered by league rank", 0, 0);
   ctx.restore();
 }
 
@@ -539,7 +554,7 @@ function renderTrends() {
     const series = selected.map(id => ({
       name: labelsById.get(id) ?? id,
       rank: ranksById.get(id) ?? 31,
-      color: teamChartColor(id),
+      color: teamChartColor(labelsById.get(id), id),
       values: snapshots.map(([, rows]) => {
         const row = rows.find(entry => String(entry.item_id) === id);
         const value = row ? Number(row[metric]) : NaN;
@@ -565,7 +580,9 @@ function renderTrends() {
     const chartStatus = !selected.length
       ? "No teams selected. Choose teams above to show their values."
       : dates.length === 1
-        ? `One successful date is saved, so this standings plot orders teams worst-to-best from top to bottom, with ${labels[metric].toLowerCase()} rising along the horizontal axis. Trends over time will appear as daily snapshots accumulate.`
+        ? metric === "rank"
+          ? "One successful date is saved. Dots use team colors, with rank 30 on the left and rank 1 on the right. Trends over time will appear as daily snapshots accumulate."
+          : `One successful date is saved. Dots use team colors; teams are ordered by league rank, and the horizontal scale shows ${labels[metric].toLowerCase()}. Trends over time will appear as daily snapshots accumulate.`
         : `${dates.length} daily snapshots are available. The horizontal axis shows snapshot date; the vertical axis shows ${labels[metric].toLowerCase()}.`;
     setText("chart-status", chartStatus);
     if (chart) chart.setAttribute("aria-label", isSingleSnapshot
