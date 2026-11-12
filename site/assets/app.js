@@ -297,7 +297,7 @@ function drawLineChart(canvas, dates, series, metric, metricLabel, emptyMessage 
   ctx.fillStyle = "#8090a5";
   for (let tick = 0; tick <= 4; tick += 1) {
     const y = top + (plotHeight * tick) / 4;
-    const value = isRank ? min + ((max - min) * tick) / 4 : max - ((max - min) * tick) / 4;
+    const value = max - ((max - min) * tick) / 4;
     ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
     const label = isRank ? String(Math.round(value)) : value.toFixed(2);
     ctx.textAlign = "right";
@@ -321,14 +321,14 @@ function drawLineChart(canvas, dates, series, metric, metricLabel, emptyMessage 
     item.values.forEach((value, index) => {
       if (!Number.isFinite(value)) { started = false; return; }
       const x = left + (dates.length < 2 ? plotWidth / 2 : (plotWidth * index) / (dates.length - 1));
-      const y = top + (isRank ? ((value - min) / (max - min)) : ((max - value) / (max - min))) * plotHeight;
+      const y = top + ((max - value) / (max - min)) * plotHeight;
       if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     });
     ctx.stroke();
     item.values.forEach((value, index) => {
       if (!Number.isFinite(value)) return;
       const x = left + (dates.length < 2 ? plotWidth / 2 : (plotWidth * index) / (dates.length - 1));
-      const y = top + (isRank ? ((value - min) / (max - min)) : ((max - value) / (max - min))) * plotHeight;
+      const y = top + ((max - value) / (max - min)) * plotHeight;
       ctx.beginPath(); ctx.fillStyle = color; ctx.arc(x, y, series.length > 12 ? 2 : 2.6, 0, Math.PI * 2); ctx.fill();
     });
   });
@@ -339,7 +339,7 @@ function drawLineChart(canvas, dates, series, metric, metricLabel, emptyMessage 
   ctx.save();
   ctx.translate(14, top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText(isRank ? "League rank (1 = best)" : metricLabel, 0, 0);
+  ctx.fillText(isRank ? "League rank (1 = best; 30 = worst)" : metricLabel, 0, 0);
   ctx.restore();
 }
 
@@ -350,7 +350,7 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
   const right = 20, top = 24, bottom = 52;
   const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const rows = [...series].filter(item => Number.isFinite(item.values[0]))
-    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+    .sort((a, b) => b.rank - a.rank || a.name.localeCompare(b.name));
   if (!rows.length) {
     ctx.fillStyle = "#8999ad";
     ctx.font = "12px sans-serif";
@@ -405,7 +405,7 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
   ctx.save();
   ctx.translate(13, top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText("Teams, ordered by league rank", 0, 0);
+  ctx.fillText("Teams, ordered from worst to best", 0, 0);
   ctx.restore();
 }
 
@@ -565,7 +565,7 @@ function renderTrends() {
     const chartStatus = !selected.length
       ? "No teams selected. Choose teams above to show their values."
       : dates.length === 1
-        ? `One successful date is saved, so this is a standings plot: teams are listed from best to worst, with ${labels[metric].toLowerCase()} on the horizontal axis. Trends over time will appear as daily snapshots accumulate.`
+        ? `One successful date is saved, so this standings plot orders teams worst-to-best from top to bottom, with ${labels[metric].toLowerCase()} rising along the horizontal axis. Trends over time will appear as daily snapshots accumulate.`
         : `${dates.length} daily snapshots are available. The horizontal axis shows snapshot date; the vertical axis shows ${labels[metric].toLowerCase()}.`;
     setText("chart-status", chartStatus);
     if (chart) chart.setAttribute("aria-label", isSingleSnapshot
