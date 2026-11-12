@@ -1,4 +1,4 @@
-const CACHE_NAME = "nba-standings-v7";
+const CACHE_NAME = "nba-standings-v8";
 const APP_SHELL = ["./", "./index.html", "./browse.html", "./trends.html", "./assets/site.css", "./assets/app.js", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", event => {

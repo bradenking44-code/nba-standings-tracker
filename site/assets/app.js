@@ -25,7 +25,7 @@ const TEAM_LOGO_CODES = {
   "New Orleans Pelicans": "no", "New York Knicks": "ny", "Oklahoma City Thunder": "okc",
   "Orlando Magic": "orl", "Philadelphia 76ers": "phi", "Phoenix Suns": "phx",
   "Portland Trail Blazers": "por", "Sacramento Kings": "sac", "San Antonio Spurs": "sa",
-  "Toronto Raptors": "tor", "Utah Jazz": "uta", "Washington Wizards": "wsh"
+  "Toronto Raptors": "tor", "Utah Jazz": "scoreboard/utah", "Washington Wizards": "wsh"
 };
 const STORAGE_KEY = "nba-standings-shortlist-v1";
 const appState = { history: [], status: {}, latest: [], previous: [], latestDate: "", previousDate: "", stars: new Set(), sortKey: "rank", sortDir: 1, shortlistOnly: false, redrawHistory: null };
@@ -94,7 +94,7 @@ function teamLogo(row) {
   const side = /west/i.test(row.conference) ? "west" : "east";
   const code = TEAM_LOGO_CODES[row.item];
   if (!code) return `<span class="team-badge ${side}" aria-hidden="true">${escapeHTML(teamInitials(row.item))}</span>`;
-  return `<img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nba/500/${code}.png" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
+  return `<span class="team-logo-wrap"><span class="team-badge ${side}" aria-hidden="true">${escapeHTML(teamInitials(row.item))}</span><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nba/500/${code}.png" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.hidden=true"></span>`;
 }
 
 function pct(value, digits = 3) { return Number(value).toFixed(digits).replace(/^0/, ""); }
