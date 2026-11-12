@@ -458,6 +458,89 @@ function drawBars(canvas, values, suffix = "") {
   });
 }
 
+function drawConferenceChart(canvas, conferences) {
+  if (!canvas) return;
+  const { context: ctx, width, height } = fitCanvas(canvas);
+  const left = 42, right = 12, top = 30, bottom = 34;
+  const plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const teams = conferences.flatMap(conference => conference.teams);
+  if (!teams.length) {
+    ctx.fillStyle = "#8999ad";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("Conference standings will appear after a successful snapshot.", 8, height / 2);
+    return;
+  }
+
+  const values = teams.map(team => team.win_pct);
+  let min = Math.max(0, Math.floor(Math.min(...values) * 10) / 10 - .1);
+  let max = Math.min(1, Math.ceil(Math.max(...values) * 10) / 10 + .1);
+  if (max <= min) { min = Math.max(0, min - .1); max = Math.min(1, max + .1); }
+  const xFor = index => left + (plotWidth * index) / 14;
+  const yFor = value => top + ((max - value) / (max - min)) * plotHeight;
+
+  ctx.font = "8px monospace";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const value = max - ((max - min) * tick) / 4;
+    const y = top + (plotHeight * tick) / 4;
+    ctx.strokeStyle = "rgba(146,166,190,.16)";
+    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+    ctx.fillStyle = "#8090a5";
+    ctx.fillText(value.toFixed(2).replace(/^0/, ""), left - 6, y);
+  }
+
+  for (let index = 0; index < 15; index += 1) {
+    const x = xFor(index);
+    if (index === 0 || index === 4 || index === 9 || index === 14) {
+      ctx.strokeStyle = "rgba(146,166,190,.1)";
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + plotHeight); ctx.stroke();
+    }
+    ctx.fillStyle = "#8090a5";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(String(index + 1), x, top + plotHeight + 13);
+  }
+
+  conferences.forEach((conference, seriesIndex) => {
+    const color = conference.color || CHART_COLORS[seriesIndex % CHART_COLORS.length];
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    conference.teams.forEach((team, index) => {
+      const x = xFor(index), y = yFor(team.win_pct);
+      if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    conference.teams.forEach((team, index) => {
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(xFor(index), yFor(team.win_pct), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    const legendX = left + seriesIndex * 88;
+    ctx.beginPath(); ctx.fillStyle = color; ctx.arc(legendX + 3, 12, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#aab6c4";
+    ctx.font = "9px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(conference.label, legendX + 10, 15);
+  });
+
+  ctx.strokeStyle = "rgba(146,166,190,.48)";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, top + plotHeight); ctx.lineTo(width - right, top + plotHeight); ctx.stroke();
+  ctx.fillStyle = "#aab6c4";
+  ctx.font = "9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Conference rank (1–15)", left + plotWidth / 2, height - 4);
+  ctx.save();
+  ctx.translate(10, top + plotHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Win percentage", 0, 0);
+  ctx.restore();
+}
+
 function latestByTeam() {
   return new Map(appState.latest.map(row => [String(row.item_id), row]));
 }
@@ -519,18 +602,19 @@ function renderFindings() {
     drawBars(document.getElementById("finding-3-chart"), []);
   }
 
-  const conferenceValues = [...new Set(latestRanked.map(row => row.conference))].sort().map(conference => {
-    const rows = latestRanked.filter(row => row.conference === conference).sort((a, b) => Number(a.rank) - Number(b.rank));
-    if (rows.length < 10) return null;
-    const gap = (Number(rows[0].win_pct) - Number(rows[9].win_pct)) * 100;
-    return { label: conference, value: gap, leader: rows[0].item, tenth: rows[9].item };
-  }).filter(Boolean);
-  if (conferenceValues.length) {
-    setText("finding-4-copy", conferenceValues.map(item => `${item.label}: ${item.value.toFixed(2)} percentage points from ${item.leader} (1st) to ${item.tenth} (10th). The gap uses conference rank and the current win percentages.`).join(" "));
-    drawBars(document.getElementById("finding-4-chart"), conferenceValues);
+  const conferenceSeries = [...new Set(latestRanked.map(row => row.conference))].sort().map((conference, index) => {
+    const teams = rankedTeams(appState.latest.filter(row => row.conference === conference))
+      .slice(0, 15)
+      .map(row => ({ name: row.item, win_pct: Number(row.win_pct) }));
+    return { label: conference, color: CHART_COLORS[index % CHART_COLORS.length], teams };
+  }).filter(conference => conference.teams.length);
+  if (conferenceSeries.length) {
+    const conferenceLabels = conferenceSeries.map(item => `${item.label} (${item.teams.length} teams)`).join(" and ");
+    setText("finding-4-copy", `Each line plots conference ranks 1–15 for ${conferenceLabels}. The vertical axis shows current win percentage.`);
+    drawConferenceChart(document.getElementById("finding-4-chart"), conferenceSeries);
   } else {
     setText("finding-4-copy", "The conference race comparison will appear after the first successful snapshot.");
-    drawBars(document.getElementById("finding-4-chart"), []);
+    drawConferenceChart(document.getElementById("finding-4-chart"), []);
   }
 }
 
