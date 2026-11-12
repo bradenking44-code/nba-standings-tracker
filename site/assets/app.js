@@ -343,6 +343,72 @@ function drawLineChart(canvas, dates, series, metric, metricLabel, emptyMessage 
   ctx.restore();
 }
 
+function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "Choose teams to show this snapshot.") {
+  if (!canvas) return;
+  const { context: ctx, width, height } = fitCanvas(canvas);
+  const left = Math.min(156, Math.max(130, width * .34));
+  const right = 20, top = 24, bottom = 52;
+  const plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const rows = [...series].filter(item => Number.isFinite(item.values[0]))
+    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+  if (!rows.length) {
+    ctx.fillStyle = "#8999ad";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(emptyMessage, left, height / 2);
+    return;
+  }
+
+  const isRank = metric === "rank";
+  let min = isRank ? 1 : Math.min(...rows.map(item => item.values[0]));
+  let max = isRank ? 30 : Math.max(...rows.map(item => item.values[0]));
+  if (!isRank) {
+    if (min === max) { min -= 1; max += 1; }
+    const pad = (max - min) * .08;
+    min -= pad;
+    max += pad;
+  }
+  const xFor = value => left + ((value - min) / (max - min)) * plotWidth;
+  const rowHeight = plotHeight / rows.length;
+
+  ctx.font = "9px monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#8090a5";
+  ctx.strokeStyle = "rgba(146,166,190,.16)";
+  const ticks = isRank && plotWidth < 250 ? [1, 15, 30] : Array.from({ length: 7 }, (_, index) => min + ((max - min) * index) / 6);
+  ticks.forEach(value => {
+    const x = xFor(value);
+    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + plotHeight); ctx.stroke();
+    ctx.fillText(isRank ? String(Math.round(value)) : value.toFixed(2), x, top + plotHeight + 16);
+  });
+
+  rows.forEach((item, index) => {
+    const y = top + rowHeight * (index + .5);
+    ctx.strokeStyle = "rgba(146,166,190,.09)";
+    ctx.beginPath(); ctx.moveTo(left, y + rowHeight / 2); ctx.lineTo(width - right, y + rowHeight / 2); ctx.stroke();
+    ctx.textAlign = "right";
+    ctx.font = "10px sans-serif";
+    ctx.fillStyle = "#c0cad6";
+    ctx.fillText(item.name, left - 10, y + 3);
+    ctx.beginPath();
+    ctx.fillStyle = item.color || "#77b8ff";
+    ctx.arc(xFor(item.values[0]), y, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.strokeStyle = "rgba(146,166,190,.48)";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, top + plotHeight); ctx.lineTo(width - right, top + plotHeight); ctx.stroke();
+  ctx.fillStyle = "#aab6c4";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(isRank ? "League rank (1 = best)" : metricLabel, left + plotWidth / 2, height - 5);
+  ctx.save();
+  ctx.translate(13, top + plotHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Teams, ordered by league rank", 0, 0);
+  ctx.restore();
+}
+
 function drawBars(canvas, values, suffix = "") {
   if (!canvas) return;
   const { context: ctx, width, height } = fitCanvas(canvas);
@@ -469,8 +535,10 @@ function renderTrends() {
     const metric = metricSelect?.value || "win_pct";
     const selected = [...teamFilterList.querySelectorAll("input:checked")].map(input => input.value);
     const labelsById = new Map(teams.map(row => [String(row.item_id), row.item]));
+    const ranksById = new Map(teams.map(row => [String(row.item_id), row.rank]));
     const series = selected.map(id => ({
       name: labelsById.get(id) ?? id,
+      rank: ranksById.get(id) ?? 31,
       color: teamChartColor(id),
       values: snapshots.map(([, rows]) => {
         const row = rows.find(entry => String(entry.item_id) === id);
@@ -478,25 +546,33 @@ function renderTrends() {
         return Number.isFinite(value) ? value : NaN;
       })
     }));
-    setText("history-chart-title", `${labels[metric]} over time`);
+    const isSingleSnapshot = dates.length === 1 && selected.length > 0;
+    setText("history-chart-title", isSingleSnapshot ? `${labels[metric]} · ${dates[0]} snapshot` : `${labels[metric]} over time`);
     const chartMessage = !dates.length
       ? "Waiting for the first successful snapshot."
       : !selected.length
         ? "Choose one or more teams in the filter above."
         : "No values are available for this selection.";
-    drawLineChart(document.getElementById("history-chart"), dates, series, metric, labels[metric], chartMessage);
+    const chart = document.getElementById("history-chart");
+    const chartWrap = chart?.parentElement;
+    if (chartWrap) {
+      chartWrap.style.height = isSingleSnapshot ? `${Math.max(200, series.length * 22 + 74)}px` : "";
+    }
+    if (isSingleSnapshot) drawSnapshotChart(chart, series, metric, labels[metric], chartMessage);
+    else drawLineChart(chart, dates, series, metric, labels[metric], chartMessage);
     const filterCount = document.getElementById("team-filter-count");
     if (filterCount) filterCount.textContent = `${selected.length} of ${teams.length} teams selected`;
     const chartStatus = !selected.length
       ? "No teams selected. Choose teams above to show their values."
       : dates.length === 1
-        ? `One successful date is available. ${selected.length === teams.length ? `All ${teams.length} teams` : "The selected teams"} appear as points; trend lines form after another daily snapshot.`
+        ? `One successful date is saved, so this is a standings plot: teams are listed from best to worst, with ${labels[metric].toLowerCase()} on the horizontal axis. Trends over time will appear as daily snapshots accumulate.`
         : `${dates.length} daily snapshots are available. The horizontal axis shows snapshot date; the vertical axis shows ${labels[metric].toLowerCase()}.`;
     setText("chart-status", chartStatus);
-    const chart = document.getElementById("history-chart");
-    if (chart) chart.setAttribute("aria-label", `${labels[metric]} by snapshot date for ${selected.length} selected teams`);
+    if (chart) chart.setAttribute("aria-label", isSingleSnapshot
+      ? `${labels[metric]} for ${selected.length} selected teams on ${dates[0]}, teams ordered by league rank`
+      : `${labels[metric]} by snapshot date for ${selected.length} selected teams`);
     const legend = document.getElementById("history-legend");
-    if (legend) legend.innerHTML = series.map(item => `<span class="legend-item"><i class="legend-dot" style="background:${item.color}"></i>${escapeHTML(item.name)}</span>`).join("");
+    if (legend) legend.innerHTML = isSingleSnapshot ? "" : series.map(item => `<span class="legend-item"><i class="legend-dot" style="background:${item.color}"></i>${escapeHTML(item.name)}</span>`).join("");
   }
   metricSelect?.addEventListener("change", drawHistory);
   teamFilterList.addEventListener("change", event => {
