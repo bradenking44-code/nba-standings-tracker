@@ -15,6 +15,18 @@ const TEAM_CHART_COLORS = {
   "Portland Trail Blazers": "#E03A3E", "Sacramento Kings": "#A47BC2", "San Antonio Spurs": "#C4CED4",
   "Toronto Raptors": "#CE1141", "Utah Jazz": "#68B7E8", "Washington Wizards": "#E31837"
 };
+const TEAM_LOGO_CODES = {
+  "Atlanta Hawks": "atl", "Boston Celtics": "bos", "Brooklyn Nets": "bkn",
+  "Charlotte Hornets": "cha", "Chicago Bulls": "chi", "Cleveland Cavaliers": "cle",
+  "Dallas Mavericks": "dal", "Denver Nuggets": "den", "Detroit Pistons": "det",
+  "Golden State Warriors": "gs", "Houston Rockets": "hou", "Indiana Pacers": "ind",
+  "LA Clippers": "lac", "Los Angeles Lakers": "lal", "Memphis Grizzlies": "mem",
+  "Miami Heat": "mia", "Milwaukee Bucks": "mil", "Minnesota Timberwolves": "min",
+  "New Orleans Pelicans": "no", "New York Knicks": "ny", "Oklahoma City Thunder": "okc",
+  "Orlando Magic": "orl", "Philadelphia 76ers": "phi", "Phoenix Suns": "phx",
+  "Portland Trail Blazers": "por", "Sacramento Kings": "sac", "San Antonio Spurs": "sa",
+  "Toronto Raptors": "tor", "Utah Jazz": "uta", "Washington Wizards": "wsh"
+};
 const STORAGE_KEY = "nba-standings-shortlist-v1";
 const appState = { history: [], status: {}, latest: [], previous: [], latestDate: "", previousDate: "", stars: new Set(), sortKey: "rank", sortDir: 1, shortlistOnly: false, redrawHistory: null };
 
@@ -78,9 +90,11 @@ function teamInitials(name) {
   return (parts[0][0] + last.slice(0, 2)).toUpperCase();
 }
 
-function teamBadge(row) {
+function teamLogo(row) {
   const side = /west/i.test(row.conference) ? "west" : "east";
-  return `<span class="team-badge ${side}">${escapeHTML(teamInitials(row.item))}</span>`;
+  const code = TEAM_LOGO_CODES[row.item];
+  if (!code) return `<span class="team-badge ${side}" aria-hidden="true">${escapeHTML(teamInitials(row.item))}</span>`;
+  return `<img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nba/500/${code}.png" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
 }
 
 function pct(value, digits = 3) { return Number(value).toFixed(digits).replace(/^0/, ""); }
@@ -166,7 +180,7 @@ function renderToday() {
       const changeLabel = change === null ? (appState.previousDate ? "NEW" : "BASELINE") : `${signed(change, 2)} pp`;
       return `<tr>
         <td><span class="rank-number">${escapeHTML(row.rank)}</span></td>
-        <td><span class="team-cell">${teamBadge(row)}${escapeHTML(row.item)}</span></td>
+        <td><span class="team-cell">${teamLogo(row)}${escapeHTML(row.item)}</span></td>
         <td>${escapeHTML(row.record)}</td><td>${pct(row.win_pct)}</td>
         <td>${Number(row.points_for_pg).toFixed(1)}</td>
         <td class="${tone(row.point_diff_pg)}">${signed(row.point_diff_pg)}</td>
@@ -233,7 +247,7 @@ function renderBrowse() {
     if (count) count.textContent = `${visible.length} of ${rankedLatest.length} teams`;
     if (!visible.length) { body.innerHTML = '<tr><td colspan="12" class="loading-cell">No teams match these filters.</td></tr>'; return; }
     body.innerHTML = visible.map(row => `<tr>
-      <td><span class="rank-number">${escapeHTML(row.rank)}</span></td><td><span class="team-cell">${teamBadge(row)}${escapeHTML(row.item)}</span></td>
+      <td><span class="rank-number">${escapeHTML(row.rank)}</span></td><td><span class="team-cell">${teamLogo(row)}${escapeHTML(row.item)}</span></td>
       <td>${escapeHTML(row.conference)}</td><td>${escapeHTML(row.division)}</td><td>${row.wins}</td><td>${row.losses}</td>
       <td>${pct(row.win_pct)}</td><td>${Number(row.points_for_pg).toFixed(1)}</td><td>${Number(row.points_against_pg).toFixed(1)}</td>
       <td class="${tone(row.point_diff_pg)}">${signed(row.point_diff_pg)}</td><td>${Number(row.games_back).toFixed(1)}</td>
