@@ -2,7 +2,8 @@ name: Daily NBA standings tracker
 
 on:
   schedule:
-    - cron: "17 12 * * *"
+    # Morning collection plus same-day recovery windows (UTC).
+    - cron: "17 12,18,23 * * *"
   workflow_dispatch:
 
 permissions:
@@ -14,7 +15,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Check whether today's standings are complete
+        id: check
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          status_path = Path("data/status.json")
+          status = json.loads(status_path.read_text()) if status_path.exists() else {}
+          today = datetime.now(timezone.utc).date().isoformat()
+          sources = status.get("sources", [])
+          complete = (
+              status.get("latest_snapshot_date") == today
+              and status.get("items") == 30
+              and any(source.get("ok") and source.get("count") == 30 for source in sources)
+          )
+          print(f"Today's standings complete: {complete}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"skip={'true' if complete else 'false'}\n")
+          PY
+
   collect:
+    needs: check
+    if: needs.check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

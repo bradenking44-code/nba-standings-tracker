@@ -115,11 +115,17 @@ def make_issue_body(
     current = snapshots.get(run_date, []) if source_result.get("ok") else []
     previous_days = sorted(day for day in snapshots if day < run_date)
     if not source_result.get("ok"):
+        retry_note = (
+            f"An earlier successful attempt saved {len(snapshots[run_date])} teams for today; "
+            "that snapshot remains in history."
+            if run_date in snapshots
+            else "No successful snapshot was saved for today. The most recent standings remain in history."
+        )
         lines.extend(
             [
                 f"**Source failed:** {source_result.get('error', 'unknown error')}",
                 "",
-                "No raw snapshot was saved for this date. The last successful standings remain in history.",
+                retry_note,
             ]
         )
         return "\n".join(lines) + "\n"
@@ -194,8 +200,8 @@ def run_pipeline(now: datetime | None = None) -> dict[str, object]:
     now = now.astimezone(timezone.utc)
     run_date = now.date().isoformat()
     raw_path = RAW_DIR / run_date / f"{SOURCE_ID}.json.gz"
-    # A rerun replaces today's archive; a failed rerun must not leave stale data.
-    raw_path.unlink(missing_ok=True)
+    # A successful rerun overwrites today's archive. If a retry fails, retain
+    # an earlier successful snapshot for this date instead of deleting it.
 
     source_result: dict[str, object]
     season = current_season(date.fromisoformat(run_date))

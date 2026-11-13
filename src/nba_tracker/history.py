@@ -73,14 +73,13 @@ def build_status(
     run_date: str,
 ) -> dict[str, object]:
     successful_dates = sorted(snapshots)
-    current_result = next((row for row in source_results if row.get("id") == SOURCE_ID), {})
-    current_ok = bool(current_result.get("ok"))
-    current_rows = snapshots.get(run_date, []) if current_ok else []
+    # A failed retry may still have a valid snapshot from an earlier attempt today.
+    current_rows = snapshots.get(run_date, [])
 
     previous_dates = [day for day in successful_dates if day < run_date]
     new_today = 0
     gone_today = 0
-    if current_ok and previous_dates:
+    if current_rows and previous_dates:
         previous_ids = {str(row["item_id"]) for row in snapshots[previous_dates[-1]]}
         current_ids = {str(row["item_id"]) for row in current_rows}
         new_today = len(current_ids - previous_ids)
