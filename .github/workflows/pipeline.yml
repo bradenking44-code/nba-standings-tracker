@@ -28,12 +28,13 @@ jobs:
           python - <<'PY'
           import json
           import os
-          from datetime import datetime, timezone
+          from datetime import datetime
           from pathlib import Path
+          from zoneinfo import ZoneInfo
 
           status_path = Path("data/status.json")
           status = json.loads(status_path.read_text()) if status_path.exists() else {}
-          today = datetime.now(timezone.utc).date().isoformat()
+          today = datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
           sources = status.get("sources", [])
           complete = (
               status.get("latest_snapshot_date") == today

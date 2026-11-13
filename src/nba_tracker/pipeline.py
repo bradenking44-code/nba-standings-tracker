@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from .history import build_status, load_snapshots, write_history, write_status
 from .source import SOURCE_ID, SOURCE_NAME, current_season, fetch_raw, parse_standings
@@ -119,7 +120,7 @@ def make_issue_body(
             f"An earlier successful attempt saved {len(snapshots[run_date])} teams for today; "
             "that snapshot remains in history."
             if run_date in snapshots
-            else "No successful snapshot was saved for today. The most recent standings remain in history."
+            else "No raw snapshot was saved for this date. The last successful standings remain in history."
         )
         lines.extend(
             [
@@ -198,7 +199,7 @@ def _save_raw(path: Path, raw: bytes) -> None:
 def run_pipeline(now: datetime | None = None) -> dict[str, object]:
     now = now or datetime.now(timezone.utc)
     now = now.astimezone(timezone.utc)
-    run_date = now.date().isoformat()
+    run_date = now.astimezone(ZoneInfo("America/Chicago")).date().isoformat()
     raw_path = RAW_DIR / run_date / f"{SOURCE_ID}.json.gz"
     # A successful rerun overwrites today's archive. If a retry fails, retain
     # an earlier successful snapshot for this date instead of deleting it.

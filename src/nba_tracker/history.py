@@ -34,7 +34,7 @@ HISTORY_FIELDS = [
 
 
 def load_snapshots(raw_dir: Path) -> dict[str, list[dict[str, object]]]:
-    """Load every successful gzip JSON source snapshot, grouped by UTC date."""
+    """Load every successful gzip JSON source snapshot, grouped by Central date."""
     snapshots: dict[str, list[dict[str, object]]] = {}
     if not raw_dir.exists():
         return snapshots

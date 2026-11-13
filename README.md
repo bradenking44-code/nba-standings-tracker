@@ -12,17 +12,17 @@ The collector requests ESPN's NBA standings endpoint:
 https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=<ending-year>&seasontype=2
 ```
 
-It fetches regular-season JSON without an account or API key. The response is compressed unchanged into `data/raw/<UTC date>/espn.json.gz`. The [NBA standings page](https://www.nba.com/standings) is a human-readable league reference. ESPN's endpoint is public-facing but does not provide a versioned API contract; the parser checks the response shape and marks a changed or blocked response as a source failure rather than writing invalid history. Division names are mapped from ESPN team abbreviations because the standings response groups teams by conference only.
+It fetches regular-season JSON without an account or API key. The response is compressed unchanged into `data/raw/<Central date>/espn.json.gz`. The [NBA standings page](https://www.nba.com/standings) is a human-readable league reference. ESPN's endpoint is public-facing but does not provide a versioned API contract; the parser checks the response shape and marks a changed or blocked response as a source failure rather than writing invalid history. Division names are mapped from ESPN team abbreviations because the standings response groups teams by conference only.
 
 The tracker keeps all 30 team rows returned by the source. The stable ESPN team ID is the key that joins the same team between days. The project records daily snapshots, so values remain the same on dates when no NBA games have been completed.
 
 ## History columns
 
-`data/history.csv` has one row per team per successful UTC snapshot. Rows are sorted by date and then `item_id`.
+`data/history.csv` has one row per team per successful Central calendar date. Rows are sorted by date and then `item_id`.
 
 | Column | Meaning | Unit or format |
 | --- | --- | --- |
-| `date` | UTC snapshot date | `YYYY-MM-DD` |
+| `date` | Central calendar snapshot date | `YYYY-MM-DD` |
 | `item_id` | ESPN team identifier | Stable string key |
 | `item` | City and team name | Text |
 | `source` | Source identifier | `espn` |
@@ -46,11 +46,11 @@ Missing source values are stored as empty fields. Numeric standings fields retai
 
 ## Daily movement rule
 
-Each dated issue lists teams that appeared or disappeared, then up to five biggest movers by absolute change in win percentage from the previous successful snapshot. Change is reported in percentage points: `(new win_pct - old win_pct) × 100`. Ties are ordered by the absolute change in point differential per game, then by stable team ID. The issue table shows old and new records, win-percentage change, and point differential. A first successful run is the baseline and has no movers. The daily issue is still created when there are no changes or the source fails; a same-day rerun replaces that date's raw snapshot and updates that date's issue.
+Each dated issue lists teams that appeared or disappeared, then up to five biggest movers by absolute change in win percentage from the previous successful snapshot. Change is reported in percentage points: `(new win_pct - old win_pct) × 100`. Ties are ordered by the absolute change in point differential per game, then by stable team ID. The issue table shows old and new records, win-percentage change, and point differential. A first successful run is the baseline and has no movers. The daily issue is still created when there are no changes or the source fails; a successful same-day retry replaces that date's raw snapshot, while a failed retry keeps an earlier successful snapshot.
 
 ## Pipeline and site
 
-The daily workflow runs at 12:17 UTC. It continues if the source fails, records the result in `data/status.json`, rebuilds history from saved raw files, and commits the data. Successful snapshots are counted once per UTC date. Issues are titled `NBA Standings — YYYY-MM-DD`; the previous day's issue is closed on the next successful GitHub API update.
+The daily workflow checks at 12:17, 18:17, and 23:17 UTC (6:17 a.m., 12:17 p.m., and 5:17 p.m. Central Standard Time; one hour later during daylight time). It retries until the source saves a complete 30-team snapshot for the Central calendar date, then skips later checks. It records the result in `data/status.json`, rebuilds history from saved raw files, and commits the data. Successful snapshots are counted once per Central date. Issues are titled `NBA Standings — YYYY-MM-DD`; the previous day's issue is closed on the next successful GitHub API update. Pages also has a scheduled redeployment at those windows in case an earlier deployment was delayed.
 
 Rebuild history from the saved raw files without a network request:
 
@@ -119,7 +119,7 @@ The assignment requires successful pipeline runs on at least seven different dat
 | `data/status.json` | Latest run status, source result, date counts, and team counts. |
 | `data/daily_issue.md` | Generated body for the dated GitHub Issue. |
 | `data/raw/.gitkeep` | Keeps the raw archive directory in Git before the first successful run. |
-| `data/raw/<date>/espn.json.gz` | Compressed, unmodified ESPN JSON response for a successful UTC date. |
+| `data/raw/<date>/espn.json.gz` | Compressed, unmodified ESPN JSON response for a successful Central date. |
 | `site/index.html` | Today page with the current field, daily movement, and run status. |
 | `site/browse.html` | Searchable and sortable team table with filters and saved stars. |
 | `site/trends.html` | Daily metric chart and four history-based findings. |
