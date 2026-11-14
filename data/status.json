@@ -1,11 +1,11 @@
 {
-  "days_with_success": 3,
+  "days_with_success": 4,
   "first_run_date": "2026-11-11",
   "gone_today": 0,
   "items": 30,
-  "latest_snapshot_date": "2026-11-13",
+  "latest_snapshot_date": "2026-11-14",
   "new_today": 0,
-  "run_time": "2026-11-13T19:41:05Z",
+  "run_time": "2026-11-14T18:00:08Z",
   "season": "2026-27",
   "sources": [
     {
