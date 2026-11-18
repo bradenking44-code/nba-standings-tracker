@@ -572,7 +572,7 @@ function renderFindings() {
   const firstMap = new Map(first.map(row => [String(row.item_id), row]));
   const changes = appState.latest.map(row => {
     const starting = firstMap.get(String(row.item_id));
-    return starting ? { item: row.item, value: (Number(row.win_pct) - Number(starting.win_pct)) * 100 } : null;
+    return starting ? { item: teamDisplayName(row), value: (Number(row.win_pct) - Number(starting.win_pct)) * 100 } : null;
   }).filter(Boolean).sort((a, b) => b.value - a.value);
   if (changes.length) {
     const best = changes[0], low = changes.at(-1);
@@ -585,7 +585,7 @@ function renderFindings() {
           : `No team has changed its win percentage since the opening snapshot on ${snapshots[0][0]}.`;
     const lowText = low.value < 0 ? `${low.item} is down ${Math.abs(low.value).toFixed(2)} points.` : "No tracked team has a net decline from its opening snapshot.";
     setText("finding-1-copy", `${bestText} Change is latest win% minus each team’s first recorded win%. ${lowText}`);
-    drawBars(document.getElementById("finding-1-chart"), changes.slice(0, 5));
+    drawBars(document.getElementById("finding-1-chart"), changes.slice(0, 5).map(change => ({ label: change.item, value: change.value })));
   } else {
     setText("finding-1-copy", "A season comparison will appear after the first successful snapshot.");
     drawBars(document.getElementById("finding-1-chart"), []);
