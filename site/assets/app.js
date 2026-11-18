@@ -15,6 +15,16 @@ const TEAM_CHART_COLORS = {
   "Portland Trail Blazers": "#E03A3E", "Sacramento Kings": "#A47BC2", "San Antonio Spurs": "#C4CED4",
   "Toronto Raptors": "#CE1141", "Utah Jazz": "#68B7E8", "Washington Wizards": "#E31837"
 };
+const TEAM_NAMES_BY_ID = {
+  "1": "Atlanta Hawks", "2": "Boston Celtics", "3": "New Orleans Pelicans", "4": "Chicago Bulls",
+  "5": "Cleveland Cavaliers", "6": "Dallas Mavericks", "7": "Denver Nuggets", "8": "Detroit Pistons",
+  "9": "Golden State Warriors", "10": "Houston Rockets", "11": "Indiana Pacers", "12": "LA Clippers",
+  "13": "Los Angeles Lakers", "14": "Miami Heat", "15": "Milwaukee Bucks", "16": "Minnesota Timberwolves",
+  "17": "Brooklyn Nets", "18": "New York Knicks", "19": "Orlando Magic", "20": "Philadelphia 76ers",
+  "21": "Phoenix Suns", "22": "Portland Trail Blazers", "23": "Sacramento Kings", "24": "San Antonio Spurs",
+  "25": "Oklahoma City Thunder", "26": "Utah Jazz", "27": "Washington Wizards", "28": "Toronto Raptors",
+  "29": "Memphis Grizzlies", "30": "Charlotte Hornets"
+};
 const TEAM_LOGO_CODES = {
   "Atlanta Hawks": "atl", "Boston Celtics": "bos", "Brooklyn Nets": "bkn",
   "Charlotte Hornets": "cha", "Chicago Bulls": "chi", "Cleveland Cavaliers": "cle",
@@ -88,6 +98,13 @@ function teamInitials(name) {
   if (parts.length < 2) return parts[0]?.slice(0, 3).toUpperCase() ?? "NBA";
   const last = parts[parts.length - 1];
   return (parts[0][0] + last.slice(0, 2)).toUpperCase();
+}
+
+function teamDisplayName(row) {
+  const name = typeof row?.item === "string" ? row.item.trim() : "";
+  if (name && !["undefined", "null"].includes(name.toLowerCase())) return name;
+  const id = String(row?.item_id ?? "");
+  return TEAM_NAMES_BY_ID[id] || (id ? `Team ${id}` : "Unknown team");
 }
 
 function teamLogo(row) {
@@ -417,7 +434,10 @@ function drawSnapshotChart(canvas, series, metric, metricLabel, emptyMessage = "
     ctx.textAlign = "right";
     ctx.font = "10px sans-serif";
     ctx.fillStyle = "#c0cad6";
-    ctx.fillText(item.name, left - 10, y + 3);
+    const name = typeof item.name === "string" && item.name.trim() && item.name.toLowerCase() !== "undefined"
+      ? item.name.trim()
+      : "Unknown team";
+    ctx.fillText(name, left - 10, y + 3);
     ctx.beginPath();
     ctx.fillStyle = item.color || "#77b8ff";
     ctx.arc(xFor(item.values[0]), y, 5, 0, Math.PI * 2);
@@ -630,16 +650,17 @@ function renderTrends() {
   if (!teamFilterList) return;
   teamFilterList.innerHTML = "";
   teams.forEach(team => {
+    const teamName = teamDisplayName(team);
     const label = document.createElement("label");
     label.className = "team-filter-option";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = String(team.item_id);
     checkbox.checked = true;
-    checkbox.setAttribute("aria-label", `Include ${team.item} in the graph`);
-    const name = document.createElement("span");
-    name.textContent = team.item;
-    label.append(checkbox, name);
+    checkbox.setAttribute("aria-label", `Include ${teamName} in the graph`);
+    const nameLabel = document.createElement("span");
+    nameLabel.textContent = teamName;
+    label.append(checkbox, nameLabel);
     teamFilterList.append(label);
   });
   const metricSelect = document.getElementById("metric-select");
@@ -647,18 +668,21 @@ function renderTrends() {
   function drawHistory() {
     const metric = metricSelect?.value || "win_pct";
     const selected = [...teamFilterList.querySelectorAll("input:checked")].map(input => input.value);
-    const labelsById = new Map(teams.map(row => [String(row.item_id), row.item]));
+    const labelsById = new Map(teams.map(row => [String(row.item_id), teamDisplayName(row)]));
     const ranksById = new Map(teams.map(row => [String(row.item_id), row.rank]));
-    const series = selected.map(id => ({
-      name: labelsById.get(id) ?? id,
-      rank: ranksById.get(id) ?? 31,
-      color: teamChartColor(labelsById.get(id), id),
-      values: snapshots.map(([, rows]) => {
-        const row = rows.find(entry => String(entry.item_id) === id);
-        const value = row ? Number(row[metric]) : NaN;
-        return Number.isFinite(value) ? value : NaN;
-      })
-    }));
+    const series = selected.map(id => {
+      const name = labelsById.get(id) || TEAM_NAMES_BY_ID[id] || `Team ${id}`;
+      return {
+        name,
+        rank: ranksById.get(id) ?? 31,
+        color: teamChartColor(name, id),
+        values: snapshots.map(([, rows]) => {
+          const row = rows.find(entry => String(entry.item_id) === id);
+          const value = row ? Number(row[metric]) : NaN;
+          return Number.isFinite(value) ? value : NaN;
+        })
+      };
+    });
     const isSingleSnapshot = dates.length === 1 && selected.length > 0;
     setText("history-chart-title", isSingleSnapshot ? `${labels[metric]} · ${dates[0]} snapshot` : `${labels[metric]} over time`);
     const chartMessage = !dates.length
