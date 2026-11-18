@@ -1,10 +1,10 @@
-## NBA standings snapshot — 2026-11-17
+## NBA standings snapshot — 2026-11-18
 
 Daily standings are archived as one row per team. Changes are ranked by absolute change in win percentage in percentage points from the previous successful snapshot; ties use point-differential change, then team ID.
 
 **Teams captured:** 30
 
-Compared with **2026-11-16**:
+Compared with **2026-11-17**:
 
 **Appeared:** none
 **Disappeared:** none
@@ -13,10 +13,10 @@ Compared with **2026-11-16**:
 
 | Team | Previous record | Current record | Win% change (pp) | Previous point diff | Current point diff |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Boston Celtics | 11-2 | 11-3 | -6.00 | +13.1 | +11.5 |
-| Portland Trail Blazers | 9-3 | 9-4 | -5.80 | +7.8 | +6.5 |
-| Houston Rockets | 11-3 | 11-4 | -5.30 | +10.2 | +8.3 |
-| Denver Nuggets | 7-4 | 7-5 | -5.30 | +1.8 | +0.6 |
-| New Orleans Pelicans | 4-10 | 5-10 | +4.70 | -9.0 | -7.1 |
+| Utah Jazz | 1-13 | 2-13 | +6.20 | -10.9 | -8.6 |
+| San Antonio Spurs | 12-2 | 12-3 | -5.70 | +12.9 | +11.2 |
+| Portland Trail Blazers | 9-4 | 9-5 | -4.90 | +6.5 | +6.0 |
+| New York Knicks | 7-6 | 8-6 | +3.30 | +5.9 | +6.1 |
+| Toronto Raptors | 5-8 | 5-9 | -2.80 | +1.0 | +0.3 |
 
-**Previous successful snapshot:** 2026-11-16
+**Previous successful snapshot:** 2026-11-17
