@@ -329,3 +329,33 @@ date,item_id,item,source,conference,division,rank,wins,losses,win_pct,points_for
 2026-11-21,7,Denver Nuggets,espn,West,Northwest,10,9,5,0.643,114.6,113.1,1.5,3.5,W2,9-5,4-3,4-2,7-3
 2026-11-21,8,Detroit Pistons,espn,East,Central,9,10,5,0.667,114.5,108.7,5.8,2.5,L1,10-5,3-3,7-2,6-4
 2026-11-21,9,Golden State Warriors,espn,West,Pacific,18,8,8,0.5,112.7,113.6,-0.9,5.5,L5,8-8,6-1,2-7,5-5
+2026-11-22,1,Atlanta Hawks,espn,East,Southeast,13,10,6,0.625,117.3,114.6,2.7,3.5,W3,10-6,4-3,6-3,7-3
+2026-11-22,10,Houston Rockets,espn,West,Southwest,6,12,5,0.706,118.2,110.6,7.6,2.0,L1,12-5,7-1,5-4,6-4
+2026-11-22,11,Indiana Pacers,espn,East,Central,22,5,11,0.312,112.0,115.6,-3.6,8.5,L3,5-11,2-5,3-5,3-7
+2026-11-22,12,LA Clippers,espn,West,Pacific,24,4,11,0.267,111.1,117.6,-6.5,9.0,L3,4-11,4-4,0-7,3-7
+2026-11-22,13,Los Angeles Lakers,espn,West,Pacific,2,14,3,0.824,120.0,113.8,6.2,0.0,W1,14-3,7-2,7-1,9-1
+2026-11-22,14,Miami Heat,espn,East,Southeast,14,9,6,0.6,120.5,119.9,0.6,4.0,W6,9-6,5-3,4-3,8-2
+2026-11-22,15,Milwaukee Bucks,espn,East,Central,30,1,16,0.059,109.4,121.7,-12.3,13.0,L13,1-16,1-8,0-8,0-10
+2026-11-22,16,Minnesota Timberwolves,espn,West,Northwest,4,12,5,0.706,114.9,105.2,9.7,2.0,W1,12-5,8-3,4-2,8-2
+2026-11-22,17,Brooklyn Nets,espn,East,Atlantic,27,3,12,0.2,110.9,118.8,-7.9,10.0,L4,3-12,1-6,2-6,3-7
+2026-11-22,18,New York Knicks,espn,East,Atlantic,11,10,6,0.625,108.7,103.1,5.6,3.5,W4,10-6,5-3,5-3,8-2
+2026-11-22,19,Orlando Magic,espn,East,Southeast,19,7,8,0.467,109.6,112.7,-3.1,6.0,W1,7-8,1-5,6-3,5-5
+2026-11-22,2,Boston Celtics,espn,East,Atlantic,7,11,5,0.688,112.8,103.0,9.8,2.5,L3,11-5,6-1,5-4,6-4
+2026-11-22,20,Philadelphia 76ers,espn,East,Atlantic,3,14,3,0.824,115.5,112.6,2.9,0.0,W5,14-3,7-2,7-1,8-2
+2026-11-22,21,Phoenix Suns,espn,West,Pacific,16,8,7,0.533,113.9,114.7,-0.8,5.0,W3,8-7,5-4,3-3,7-3
+2026-11-22,22,Portland Trail Blazers,espn,West,Northwest,10,10,6,0.625,116.1,110.3,5.8,3.5,L1,10-6,3-2,7-4,5-5
+2026-11-22,23,Sacramento Kings,espn,West,Pacific,29,2,14,0.125,106.8,119.1,-12.3,11.5,W1,2-14,1-9,1-5,2-8
+2026-11-22,24,San Antonio Spurs,espn,West,Southwest,1,14,3,0.824,117.3,105.4,11.9,0.0,W2,14-3,7-3,7-0,9-1
+2026-11-22,25,Oklahoma City Thunder,espn,West,Northwest,12,10,6,0.625,113.0,108.5,4.5,3.5,W1,10-6,6-1,4-5,6-4
+2026-11-22,26,Utah Jazz,espn,West,Northwest,28,3,14,0.176,108.3,115.7,-7.4,11.0,L1,3-14,1-8,2-6,2-8
+2026-11-22,27,Washington Wizards,espn,East,Southeast,21,6,11,0.353,110.0,116.5,-6.5,8.0,W2,6-11,2-5,4-6,2-8
+2026-11-22,28,Toronto Raptors,espn,East,Atlantic,20,6,10,0.375,111.6,111.4,0.2,7.5,W1,6-10,2-6,4-4,3-7
+2026-11-22,29,Memphis Grizzlies,espn,West,Southwest,5,12,5,0.706,120.5,111.5,9.0,2.0,L1,12-5,4-4,8-1,6-4
+2026-11-22,3,New Orleans Pelicans,espn,West,Southwest,23,5,13,0.278,114.3,122.5,-8.2,9.5,L3,5-13,4-7,1-6,1-9
+2026-11-22,30,Charlotte Hornets,espn,East,Southeast,26,4,11,0.267,99.9,110.5,-10.6,9.0,L4,4-11,3-4,1-7,1-9
+2026-11-22,4,Chicago Bulls,espn,East,Central,25,4,11,0.267,114.7,122.8,-8.1,9.0,L1,4-11,1-5,3-6,3-7
+2026-11-22,5,Cleveland Cavaliers,espn,East,Central,17,9,8,0.529,118.8,116.5,2.3,5.0,W1,9-8,7-3,2-5,5-5
+2026-11-22,6,Dallas Mavericks,espn,West,Southwest,15,9,7,0.562,112.2,112.4,-0.2,4.5,W2,9-7,7-2,2-5,5-5
+2026-11-22,7,Denver Nuggets,espn,West,Northwest,9,9,5,0.643,114.6,113.1,1.5,3.5,W2,9-5,4-3,4-2,7-3
+2026-11-22,8,Detroit Pistons,espn,East,Central,8,10,5,0.667,114.5,108.7,5.8,3.0,L1,10-5,3-3,7-2,6-4
+2026-11-22,9,Golden State Warriors,espn,West,Pacific,18,8,8,0.5,112.7,113.6,-0.9,5.5,L5,8-8,6-1,2-7,5-5
