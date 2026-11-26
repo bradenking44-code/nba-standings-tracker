@@ -1,10 +1,10 @@
-## NBA standings snapshot — 2026-11-25
+## NBA standings snapshot — 2026-11-26
 
 Daily standings are archived as one row per team. Changes are ranked by absolute change in win percentage in percentage points from the previous successful snapshot; ties use point-differential change, then team ID.
 
 **Teams captured:** 30
 
-Compared with **2026-11-24**:
+Compared with **2026-11-25**:
 
 **Appeared:** none
 **Disappeared:** none
@@ -13,10 +13,10 @@ Compared with **2026-11-24**:
 
 | Team | Previous record | Current record | Win% change (pp) | Previous point diff | Current point diff |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Denver Nuggets | 10-5 | 10-6 | -4.20 | +1.8 | +0.5 |
-| Orlando Magic | 7-9 | 7-10 | -2.60 | -4.1 | -5.0 |
-| Dallas Mavericks | 10-7 | 11-7 | +2.30 | -0.1 | +1.0 |
-| Detroit Pistons | 10-6 | 11-6 | +2.20 | +4.8 | +5.6 |
-| Washington Wizards | 7-11 | 7-12 | -2.10 | -5.1 | -5.6 |
+| Brooklyn Nets | 3-13 | 4-13 | +4.70 | -9.1 | -8.1 |
+| San Antonio Spurs | 15-3 | 15-4 | -4.40 | +12.2 | +11.3 |
+| Chicago Bulls | 5-12 | 6-12 | +3.90 | -6.7 | -6.2 |
+| Miami Heat | 10-6 | 10-7 | -3.70 | +1.3 | +0.8 |
+| Phoenix Suns | 9-7 | 9-8 | -3.30 | -0.6 | -1.3 |
 
-**Previous successful snapshot:** 2026-11-24
+**Previous successful snapshot:** 2026-11-25
